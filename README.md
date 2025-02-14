@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Resume Generator
 
-## Getting Started
+A dynamic resume generator built with Next.js and TypeScript. This application allows users to input their personal details, work experience, education, and skills to generate a well-formatted resume. It also includes AI-enhanced descriptions for work experience using an API endpoint.
 
-First, run the development server:
+Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Dynamic form fields for experience, education, and skills
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+AI-enhanced work experience descriptions via API calls
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Responsive UI built with Tailwind CSS
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Next.js API routes for handling resume generation
 
-## Learn More
+Form validation to ensure complete user input
 
-To learn more about Next.js, take a look at the following resources:
+Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Frontend: React.js (Next.js), TypeScript, Tailwind CSS
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Backend: Next.js API routes
 
-## Deploy on Vercel
+AI Integration: OpenAI API (or other AI models for description generation)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Deployment: Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Live Deployment
+
+View here: https://resumaker-six.vercel.app/
