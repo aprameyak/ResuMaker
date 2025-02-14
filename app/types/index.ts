@@ -4,6 +4,7 @@ export interface FormData {
     email: string;
     phone: string;
     location: string;
+    summary: string;
   };
   experience: {
     company: string;
@@ -18,4 +19,6 @@ export interface FormData {
     graduationDate: string;
   }[];
   skills: string[];
-} 
+}
+
+export type ResumeData = FormData; 
