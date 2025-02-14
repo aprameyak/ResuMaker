@@ -7,7 +7,8 @@ export async function POST(request: Request) {
     const generatedContent = await generateResumeContent(body);
     
     return NextResponse.json({ content: generatedContent });
-  } catch (error) {
+  } catch (err) {
+    console.error('Error generating content:', err);
     return NextResponse.json(
       { error: 'Failed to generate content' },
       { status: 500 }

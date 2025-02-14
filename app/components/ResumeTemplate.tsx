@@ -25,11 +25,11 @@ export default function ResumeTemplate({ data, isEditable = false, onEdit }: Res
     pdf.save('resume.pdf');
   };
 
-  const handleEdit = (section: keyof FormData, value: any) => {
+  const handleEdit = <K extends keyof FormData>(section: K, value: FormData[K]) => {
     if (!onEdit) return;
     onEdit({
       ...data,
-      [section]: value
+      [section]: value,
     });
   };
 
@@ -134,4 +134,4 @@ export default function ResumeTemplate({ data, isEditable = false, onEdit }: Res
       </div>
     </div>
   );
-} 
+}
