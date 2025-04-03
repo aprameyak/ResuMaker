@@ -1,168 +1,140 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import ResumeForm from './components/ResumeForm';
 import ResumeTemplate from './components/ResumeTemplate';
 import { FormData } from '@/app/types';
 
-interface Styles {
-  [key: string]: React.CSSProperties | string | number;
-}
-
 export default function Home() {
   const [resumeData, setResumeData] = useState<FormData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleFormSubmit = useCallback(async (data: FormData) => {
-    setIsLoading(true);
-    try {
-      setResumeData(data);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const styles: Styles = {
+  const styles = {
     container: {
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%)',
+      background: 'linear-gradient(to bottom, #ffffff, #f7f7f7)',
       display: 'flex',
-      flexDirection: 'column',
-      position: 'relative',
+      flexDirection: 'column' as const,
     },
     header: {
-      padding: '2.5rem 0',
-      background: 'linear-gradient(135deg, #2c3e50 0%, #3498db 100%)',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-      position: 'relative',
-      zIndex: 1,
+      padding: '2rem 0',
+      background: '#ffffff',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
     },
     headerContent: {
       maxWidth: '1200px',
       margin: '0 auto',
       padding: '0 2rem',
-      textAlign: 'center',
+      textAlign: 'center' as const,
     },
     title: {
-      fontSize: '2.8rem',
+      fontSize: '2.5rem',
       fontWeight: '600',
-      color: '#ffffff',
-      marginBottom: '0.75rem',
-      textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      letterSpacing: '-0.5px',
+      color: '#1a1a1a',
+      marginBottom: '0.5rem',
     },
     subtitle: {
-      fontSize: '1.2rem',
-      color: '#e0e6ed',
-      fontWeight: '400',
-      maxWidth: '600px',
-      margin: '0 auto',
-      lineHeight: '1.6',
+      fontSize: '1.1rem',
+      color: '#666666',
     },
     main: {
       maxWidth: '1200px',
-      margin: '2.5rem auto',
+      margin: '2rem auto',
       padding: '0 2rem',
       flex: '1',
-      width: '100%',
-      boxSizing: 'border-box',
-      position: 'relative',
-      zIndex: 2,
     },
     formContainer: {
       background: '#ffffff',
       borderRadius: '12px',
-      padding: '2.5rem',
-      boxShadow: '0 8px 16px rgba(0, 0, 0, 0.08)',
+      padding: '2rem',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
       maxWidth: '800px',
       margin: '0 auto',
     },
     formHeader: {
-      marginBottom: '2rem',
-      textAlign: 'center',
+      marginBottom: '1.5rem',
     },
     formTitle: {
-      fontSize: '1.8rem',
+      fontSize: '1.5rem',
       fontWeight: '600',
-      color: '#2c3e50',
-      marginBottom: '0.75rem',
+      color: '#1a1a1a',
+      marginBottom: '0.5rem',
     },
     formSubtitle: {
-      color: '#5a6c7d',
-      fontSize: '1.1rem',
-      lineHeight: '1.5',
+      color: '#666666',
+      fontSize: '1rem',
     },
     resumeContainer: {
       background: '#ffffff',
       borderRadius: '12px',
-      boxShadow: '0 8px 16px rgba(0, 0, 0, 0.08)',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
       overflow: 'hidden',
     },
     resumeHeader: {
-      padding: '1.25rem 1.75rem',
-      background: '#f8fafc',
-      borderBottom: '1px solid #e0e6ed',
+      padding: '1rem 1.5rem',
+      background: '#f8f9fa',
+      borderBottom: '1px solid #eaeaea',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
     },
     resumeTitle: {
-      fontSize: '1.4rem',
+      fontSize: '1.25rem',
       fontWeight: '600',
-      color: '#2c3e50',
+      color: '#1a1a1a',
     },
     buttonContainer: {
       display: 'flex',
       gap: '1rem',
     },
     primaryButton: {
-      padding: '0.75rem 1.5rem',
-      background: '#3498db',
+      padding: '0.5rem 1rem',
+      background: '#0066ff',
       color: '#ffffff',
       border: 'none',
       borderRadius: '6px',
-      fontSize: '0.95rem',
+      fontSize: '0.9rem',
       fontWeight: '500',
       cursor: 'pointer',
-      transition: 'all 0.2s ease',
+      transition: 'background 0.2s ease',
+      ':hover': {
+        background: '#0052cc',
+      },
     },
     secondaryButton: {
-      padding: '0.75rem 1.5rem',
+      padding: '0.5rem 1rem',
       background: '#ffffff',
-      color: '#2c3e50',
-      border: '1px solid #e0e6ed',
+      color: '#1a1a1a',
+      border: '1px solid #e0e0e0',
       borderRadius: '6px',
-      fontSize: '0.95rem',
+      fontSize: '0.9rem',
       fontWeight: '500',
       cursor: 'pointer',
-      transition: 'all 0.2s ease',
+      transition: 'background 0.2s ease',
     },
     downloadButton: {
       display: 'flex',
       alignItems: 'center',
-      gap: '0.75rem',
-      padding: '0.875rem 1.75rem',
-      background: '#2ecc71',
+      gap: '0.5rem',
+      padding: '0.75rem 1.5rem',
+      background: '#10b981',
       color: '#ffffff',
       border: 'none',
       borderRadius: '6px',
-      fontSize: '0.95rem',
+      fontSize: '0.9rem',
       fontWeight: '500',
       cursor: 'pointer',
-      margin: '1.75rem auto',
-      transition: 'all 0.2s ease',
+      margin: '1.5rem auto',
+      transition: 'background 0.2s ease',
     },
     resumeContent: {
-      padding: '2.5rem',
+      padding: '2rem',
     },
     footer: {
-      padding: '1.75rem 0',
-      borderTop: '1px solid #e0e6ed',
-      textAlign: 'center',
-      color: '#5a6c7d',
-      background: '#ffffff',
+      padding: '1.5rem 0',
+      borderTop: '1px solid #eaeaea',
+      textAlign: 'center' as const,
+      color: '#666666',
     },
   };
 
@@ -187,9 +159,10 @@ export default function Home() {
               </p>
             </div>
             <ResumeForm
-              onSubmit={handleFormSubmit}
-              isLoading={isLoading}
-              styles={styles}
+              onSubmit={(data) => {
+                setResumeData(data);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             />
           </div>
         ) : (
