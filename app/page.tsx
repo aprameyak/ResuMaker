@@ -5,6 +5,10 @@ import ResumeForm from './components/ResumeForm';
 import ResumeTemplate from './components/ResumeTemplate';
 import { FormData } from '@/app/types';
 
+interface Styles {
+  [key: string]: React.CSSProperties | string | number;
+}
+
 export default function Home() {
   const [resumeData, setResumeData] = useState<FormData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -20,26 +24,26 @@ export default function Home() {
     }
   }, []);
 
-  const styles = {
+  const styles: Styles = {
     container: {
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%)',
       display: 'flex',
-      flexDirection: 'column' as const,
-      position: 'relative' as const,
+      flexDirection: 'column',
+      position: 'relative',
     },
     header: {
       padding: '2.5rem 0',
       background: 'linear-gradient(135deg, #2c3e50 0%, #3498db 100%)',
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-      position: 'relative' as const,
+      position: 'relative',
       zIndex: 1,
     },
     headerContent: {
       maxWidth: '1200px',
       margin: '0 auto',
       padding: '0 2rem',
-      textAlign: 'center' as const,
+      textAlign: 'center',
     },
     title: {
       fontSize: '2.8rem',
@@ -63,8 +67,8 @@ export default function Home() {
       padding: '0 2rem',
       flex: '1',
       width: '100%',
-      boxSizing: 'border-box' as const,
-      position: 'relative' as const,
+      boxSizing: 'border-box',
+      position: 'relative',
       zIndex: 2,
     },
     formContainer: {
@@ -77,7 +81,7 @@ export default function Home() {
     },
     formHeader: {
       marginBottom: '2rem',
-      textAlign: 'center' as const,
+      textAlign: 'center',
     },
     formTitle: {
       fontSize: '1.8rem',
@@ -156,7 +160,7 @@ export default function Home() {
     footer: {
       padding: '1.75rem 0',
       borderTop: '1px solid #e0e6ed',
-      textAlign: 'center' as const,
+      textAlign: 'center',
       color: '#5a6c7d',
       background: '#ffffff',
     },
