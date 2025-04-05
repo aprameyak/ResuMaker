@@ -1,29 +1,30 @@
-Resume Generator
+# ResuMaker
 
-A dynamic resume generator built with Next.js and TypeScript. This application allows users to input their personal details, work experience, education, and skills to generate a well-formatted resume. It also includes AI-enhanced descriptions for work experience using an API endpoint.
+![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white&style=for-the-badge)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white&style=for-the-badge)
+![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-06B6D4?logo=tailwindcss&logoColor=white&style=for-the-badge)
+![OpenAI](https://img.shields.io/badge/OpenAI%20API-412991?logo=openai&logoColor=white&style=for-the-badge)
+![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white&style=for-the-badge)
 
-Features
+## About
 
-Dynamic form fields for experience, education, and skills
+**ResuMaker** is a dynamic web application built with **Next.js** and **TypeScript** that enables users to create professional resumes. It features **AI-enhanced descriptions** for work experiences, ensuring users can easily generate impactful bullet points for their job roles.
 
-AI-enhanced work experience descriptions via API calls
+## Features
 
-Responsive UI built with Tailwind CSS
+- Dynamic form fields for experience, education, and skills  
+- AI-enhanced work experience descriptions via API calls  
+- Responsive design using Tailwind CSS  
+- Serverless API routes for handling resume data  
+- Form validation for complete and accurate input
 
-Next.js API routes for handling resume generation
+## Technology Stack
 
-Form validation to ensure complete user input
+- **Frontend**: React.js (Next.js), TypeScript, Tailwind CSS  
+- **Backend**: Next.js API Routes  
+- **AI Integration**: OpenAI API (or compatible models for generating descriptions)  
+- **Deployment**: Vercel
 
-Tech Stack
+## Live Deployment
 
-Frontend: React.js (Next.js), TypeScript, Tailwind CSS
-
-Backend: Next.js API routes
-
-AI Integration: OpenAI API (or other AI models for description generation)
-
-Deployment: Vercel
-
-Live Deployment
-
-View here: https://resumaker-six.vercel.app/
+- **View Here**: [https://resumaker-six.vercel.app/](https://resumaker-six.vercel.app/)
