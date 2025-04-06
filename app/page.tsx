@@ -12,129 +12,130 @@ export default function Home() {
   const styles = {
     container: {
       minHeight: '100vh',
-      background: 'linear-gradient(to bottom, #ffffff, #f7f7f7)',
+      background: 'linear-gradient(to bottom right, #f0f4f8, #ffffff)',
       display: 'flex',
       flexDirection: 'column' as const,
+      fontFamily: `'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`,
+      color: '#1f2937',
     },
     header: {
-      padding: '2rem 0',
+      padding: '3rem 1rem',
       background: '#ffffff',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
     },
     headerContent: {
-      maxWidth: '1200px',
+      maxWidth: '960px',
       margin: '0 auto',
-      padding: '0 2rem',
       textAlign: 'center' as const,
     },
     title: {
-      fontSize: '2.5rem',
-      fontWeight: '600',
-      color: '#1a1a1a',
+      fontSize: '2.75rem',
+      fontWeight: 700,
+      color: '#111827',
       marginBottom: '0.5rem',
     },
     subtitle: {
-      fontSize: '1.1rem',
-      color: '#666666',
+      fontSize: '1.2rem',
+      color: '#6b7280',
     },
     main: {
-      maxWidth: '1200px',
+      maxWidth: '960px',
       margin: '2rem auto',
-      padding: '0 2rem',
+      padding: '0 1.5rem',
       flex: '1',
     },
     formContainer: {
       background: '#ffffff',
-      borderRadius: '12px',
+      borderRadius: '20px',
       padding: '2rem',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
-      maxWidth: '800px',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)',
+      maxWidth: '720px',
       margin: '0 auto',
     },
     formHeader: {
-      marginBottom: '1.5rem',
+      marginBottom: '1.75rem',
     },
     formTitle: {
-      fontSize: '1.5rem',
-      fontWeight: '600',
-      color: '#1a1a1a',
+      fontSize: '1.75rem',
+      fontWeight: 600,
+      color: '#1f2937',
       marginBottom: '0.5rem',
     },
     formSubtitle: {
-      color: '#666666',
+      color: '#4b5563',
       fontSize: '1rem',
     },
     resumeContainer: {
       background: '#ffffff',
-      borderRadius: '12px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+      borderRadius: '20px',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)',
       overflow: 'hidden',
     },
     resumeHeader: {
       padding: '1rem 1.5rem',
-      background: '#f8f9fa',
-      borderBottom: '1px solid #eaeaea',
+      background: '#f3f4f6',
+      borderBottom: '1px solid #e5e7eb',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
     },
     resumeTitle: {
-      fontSize: '1.25rem',
-      fontWeight: '600',
-      color: '#1a1a1a',
+      fontSize: '1.5rem',
+      fontWeight: 600,
+      color: '#111827',
     },
     buttonContainer: {
       display: 'flex',
-      gap: '1rem',
+      gap: '0.75rem',
+      marginLeft: '1rem', 
     },
     primaryButton: {
       padding: '0.5rem 1rem',
-      background: '#0066ff',
+      background: '#3b82f6',
       color: '#ffffff',
       border: 'none',
-      borderRadius: '6px',
-      fontSize: '0.9rem',
-      fontWeight: '500',
+      borderRadius: '10px',
+      fontSize: '0.95rem',
+      fontWeight: 500,
       cursor: 'pointer',
-      transition: 'background 0.2s ease',
-      ':hover': {
-        background: '#0052cc',
-      },
+      transition: 'background 0.2s ease-in-out',
     },
     secondaryButton: {
       padding: '0.5rem 1rem',
       background: '#ffffff',
-      color: '#1a1a1a',
-      border: '1px solid #e0e0e0',
-      borderRadius: '6px',
-      fontSize: '0.9rem',
-      fontWeight: '500',
+      color: '#1f2937',
+      border: '1px solid #d1d5db',
+      borderRadius: '10px',
+      fontSize: '0.95rem',
+      fontWeight: 500,
       cursor: 'pointer',
-      transition: 'background 0.2s ease',
+      transition: 'all 0.2s ease-in-out',
     },
     downloadButton: {
       display: 'flex',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: '0.5rem',
       padding: '0.75rem 1.5rem',
       background: '#10b981',
       color: '#ffffff',
       border: 'none',
-      borderRadius: '6px',
-      fontSize: '0.9rem',
-      fontWeight: '500',
+      borderRadius: '10px',
+      fontSize: '1rem',
+      fontWeight: 500,
       cursor: 'pointer',
-      margin: '1.5rem auto',
-      transition: 'background 0.2s ease',
+      margin: '2rem auto',
+      transition: 'background 0.3s ease-in-out',
     },
     resumeContent: {
       padding: '2rem',
     },
     footer: {
-      padding: '1.5rem 0',
-      borderTop: '1px solid #eaeaea',
+      padding: '2rem 0',
+      borderTop: '1px solid #e5e7eb',
       textAlign: 'center' as const,
-      color: '#666666',
+      color: '#6b7280',
+      fontSize: '0.875rem',
     },
   };
 
@@ -175,6 +176,7 @@ export default function Home() {
                 <button
                   onClick={() => setIsEditing(!isEditing)}
                   style={styles.primaryButton}
+                  aria-label={isEditing ? 'Save changes' : 'Edit resume'}
                 >
                   {isEditing ? 'Save Changes' : 'Edit Resume'}
                 </button>
@@ -185,6 +187,7 @@ export default function Home() {
                       setIsEditing(false);
                     }}
                     style={styles.secondaryButton}
+                    aria-label="Create new resume"
                   >
                     Create New Resume
                   </button>
@@ -207,6 +210,7 @@ export default function Home() {
               <button
                 onClick={() => window.print()}
                 style={styles.downloadButton}
+                aria-label="Download resume as PDF"
               >
                 <svg
                   width="16"
