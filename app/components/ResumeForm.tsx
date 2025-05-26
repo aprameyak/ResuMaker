@@ -1,34 +1,6 @@
 import React, { useState } from 'react';
-
-interface PersonalInfo {
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  summary: string;
-}
-
-interface Experience {
-  company: string;
-  position: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-}
-
-interface Education {
-  school: string;
-  degree: string;
-  graduationDate: string;
-}
-
-interface FormData {
-  personalInfo: PersonalInfo;
-  experience: Experience[];
-  education: Education[];
-  skills: string[];
-  existingCV?: string;
-}
+import AIResumeEditor from './AIResumeEditor';
+import { FormData } from '@/app/types';
 
 export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) => void }) {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -53,43 +25,15 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
       graduationDate: ''
     }],
     skills: [''],
-    existingCV: ''
   });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsGenerating(true);
-
     try {
-      const enhancedExperience = await Promise.all(
-        formData.experience.map(async (exp) => {
-          const response = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(exp),
-          });
-          const data = await response.json();
-          let description = '';
-          if (data.status === 'error') {
-            description = data.error || 'Error generating description';
-          } else if (typeof data.content === 'string' && data.content.trim() !== '') {
-            description = data.content;
-          } else {
-            description = exp.description;
-          }
-          return {
-            ...exp,
-            description,
-          };
-        })
-      );
-
-      onSubmit({
-        ...formData,
-        experience: enhancedExperience,
-      });
+      onSubmit(formData);
     } catch (error) {
-      console.error('Error generating resume:', error);
+      console.error('Error submitting form:', error);
     } finally {
       setIsGenerating(false);
     }
@@ -119,51 +63,27 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
   const styles = {
     form: {
       padding: '2rem',
-      fontFamily: `'Segoe UI', sans-serif`,
+      fontFamily: "'Segoe UI', sans-serif",
       color: '#1f2937',
       maxWidth: '800px',
       margin: '0 auto'
     },
     section: {
-      marginBottom: '2rem'
-    },
-    label: {
-      display: 'block',
-      fontWeight: 500,
-      marginBottom: '0.5rem',
-      color: '#374151'
-    },
-    input: {
-      width: '100%',
-      padding: '0.75rem',
-      marginBottom: '1rem',
-      borderRadius: '8px',
-      border: '1px solid #d1d5db',
-      fontSize: '1rem',
-      backgroundColor: '#f9fafb'
-    },
-    textarea: {
-      width: '100%',
-      padding: '0.75rem',
-      borderRadius: '8px',
-      border: '1px solid #d1d5db',
-      fontSize: '1rem',
-      minHeight: '100px',
-      backgroundColor: '#f9fafb',
-      marginBottom: '1rem'
+      marginBottom: '2rem',
+      backgroundColor: '#ffffff',
+      padding: '1.5rem',
+      borderRadius: '12px',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+      border: '1px solid #e5e7eb',
     },
     sectionTitle: {
       fontSize: '1.25rem',
       fontWeight: 600,
       marginBottom: '1rem',
-      color: '#111827'
-    },
-    card: {
-      backgroundColor: '#f3f4f6',
-      borderRadius: '12px',
-      padding: '1rem',
-      marginBottom: '1rem',
-      border: '1px solid #e5e7eb'
+      color: '#111827',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
     addButton: {
       backgroundColor: '#3b82f6',
@@ -173,9 +93,7 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
       borderRadius: '6px',
       cursor: 'pointer',
       fontWeight: 500,
-      marginTop: '0.5rem',
-      transition: 'background 0.2s ease-in-out',
-      outline: '2px solid transparent'
+      fontSize: '0.875rem',
     },
     submitButton: {
       backgroundColor: '#10b981',
@@ -186,118 +104,103 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
       borderRadius: '8px',
       fontWeight: 600,
       cursor: 'pointer',
-      marginTop: '2rem',
       width: '100%',
-      transition: 'background 0.2s ease-in-out',
-      outline: '2px solid transparent'
+      marginTop: '2rem',
     },
-    heading: {
-      fontSize: '2rem',
-      fontWeight: 700,
-      textAlign: 'center' as const,
-      marginBottom: '0.5rem'
+    input: {
+      width: '100%',
+      padding: '0.75rem',
+      marginBottom: '1rem',
+      borderRadius: '6px',
+      border: '1px solid #d1d5db',
+      fontSize: '1rem',
     },
-    subheading: {
-      textAlign: 'center' as const,
-      color: '#6b7280',
-      marginBottom: '2rem'
-    }
+    experienceItem: {
+      backgroundColor: '#f9fafb',
+      padding: '1rem',
+      borderRadius: '8px',
+      marginBottom: '1rem',
+    },
   };
 
   return (
     <form onSubmit={handleSubmit} style={styles.form}>
-      <h2 style={styles.heading}>Create Your Resume</h2>
-      <p style={styles.subheading}>Fill in your details to build a polished resume</p>
-
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Personal Information</h3>
-        <label style={styles.label}>Full Name</label>
+        <h2 style={styles.sectionTitle}>Personal Information</h2>
         <input
           style={styles.input}
           type="text"
+          placeholder="Full Name"
           value={formData.personalInfo.name}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              personalInfo: { ...formData.personalInfo, name: e.target.value }
-            })
-          }
+          onChange={(e) => setFormData({
+            ...formData,
+            personalInfo: { ...formData.personalInfo, name: e.target.value }
+          })}
           required
-          aria-required="true"
         />
-
-        <label style={styles.label}>Email</label>
         <input
           style={styles.input}
           type="email"
+          placeholder="Email"
           value={formData.personalInfo.email}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              personalInfo: { ...formData.personalInfo, email: e.target.value }
-            })
-          }
+          onChange={(e) => setFormData({
+            ...formData,
+            personalInfo: { ...formData.personalInfo, email: e.target.value }
+          })}
           required
-          aria-required="true"
         />
-
-        <label style={styles.label}>Phone</label>
         <input
           style={styles.input}
           type="tel"
+          placeholder="Phone"
           value={formData.personalInfo.phone}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              personalInfo: { ...formData.personalInfo, phone: e.target.value }
-            })
-          }
+          onChange={(e) => setFormData({
+            ...formData,
+            personalInfo: { ...formData.personalInfo, phone: e.target.value }
+          })}
           required
-          aria-required="true"
         />
-
-        <label style={styles.label}>Location</label>
         <input
           style={styles.input}
           type="text"
+          placeholder="Location"
           value={formData.personalInfo.location}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              personalInfo: { ...formData.personalInfo, location: e.target.value }
-            })
-          }
+          onChange={(e) => setFormData({
+            ...formData,
+            personalInfo: { ...formData.personalInfo, location: e.target.value }
+          })}
+          required
         />
-
-        <label style={styles.label}>Professional Summary</label>
-        <textarea
-          style={styles.textarea}
-          value={formData.personalInfo.summary}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              personalInfo: { ...formData.personalInfo, summary: e.target.value }
-            })
-          }
-          aria-label="Professional Summary"
+        <AIResumeEditor
+          section="summary"
+          content={formData.personalInfo.summary}
+          onUpdate={(newContent) => setFormData({
+            ...formData,
+            personalInfo: { ...formData.personalInfo, summary: newContent }
+          })}
         />
       </div>
 
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Experience</h3>
+        <div style={styles.sectionTitle}>
+          <h2>Experience</h2>
+          <button type="button" onClick={addExperience} style={styles.addButton}>
+            Add Experience
+          </button>
+        </div>
         {formData.experience.map((exp, index) => (
-          <div key={index} style={styles.card}>
+          <div key={index} style={styles.experienceItem}>
             <input
               style={styles.input}
               type="text"
               placeholder="Company"
               value={exp.company}
               onChange={(e) => {
-                const updated = [...formData.experience];
-                updated[index].company = e.target.value;
-                setFormData({ ...formData, experience: updated });
+                const newExp = [...formData.experience];
+                newExp[index] = { ...exp, company: e.target.value };
+                setFormData({ ...formData, experience: newExp });
               }}
-              aria-label={`Company for experience ${index + 1}`}
+              required
             />
             <input
               style={styles.input}
@@ -305,39 +208,70 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
               placeholder="Position"
               value={exp.position}
               onChange={(e) => {
-                const updated = [...formData.experience];
-                updated[index].position = e.target.value;
-                setFormData({ ...formData, experience: updated });
+                const newExp = [...formData.experience];
+                newExp[index] = { ...exp, position: e.target.value };
+                setFormData({ ...formData, experience: newExp });
               }}
-              aria-label={`Position for experience ${index + 1}`}
+              required
+            />
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+              <input
+                style={{ ...styles.input, marginBottom: 0 }}
+                type="date"
+                placeholder="Start Date"
+                value={exp.startDate}
+                onChange={(e) => {
+                  const newExp = [...formData.experience];
+                  newExp[index] = { ...exp, startDate: e.target.value };
+                  setFormData({ ...formData, experience: newExp });
+                }}
+                required
+              />
+              <input
+                style={{ ...styles.input, marginBottom: 0 }}
+                type="date"
+                placeholder="End Date"
+                value={exp.endDate}
+                onChange={(e) => {
+                  const newExp = [...formData.experience];
+                  newExp[index] = { ...exp, endDate: e.target.value };
+                  setFormData({ ...formData, experience: newExp });
+                }}
+              />
+            </div>
+            <AIResumeEditor
+              section="experience"
+              content={exp.description}
+              onUpdate={(newContent) => {
+                const newExp = [...formData.experience];
+                newExp[index] = { ...exp, description: newContent };
+                setFormData({ ...formData, experience: newExp });
+              }}
             />
           </div>
         ))}
-        <button
-          type="button"
-          onClick={addExperience}
-          style={styles.addButton}
-          aria-label="Add new experience"
-        >
-          + Add Experience
-        </button>
       </div>
 
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Education</h3>
+        <div style={styles.sectionTitle}>
+          <h2>Education</h2>
+          <button type="button" onClick={addEducation} style={styles.addButton}>
+            Add Education
+          </button>
+        </div>
         {formData.education.map((edu, index) => (
-          <div key={index} style={styles.card}>
+          <div key={index} style={styles.experienceItem}>
             <input
               style={styles.input}
               type="text"
               placeholder="School"
               value={edu.school}
               onChange={(e) => {
-                const updated = [...formData.education];
-                updated[index].school = e.target.value;
-                setFormData({ ...formData, education: updated });
+                const newEdu = [...formData.education];
+                newEdu[index] = { ...edu, school: e.target.value };
+                setFormData({ ...formData, education: newEdu });
               }}
-              aria-label={`School for education ${index + 1}`}
+              required
             />
             <input
               style={styles.input}
@@ -345,75 +279,51 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
               placeholder="Degree"
               value={edu.degree}
               onChange={(e) => {
-                const updated = [...formData.education];
-                updated[index].degree = e.target.value;
-                setFormData({ ...formData, education: updated });
+                const newEdu = [...formData.education];
+                newEdu[index] = { ...edu, degree: e.target.value };
+                setFormData({ ...formData, education: newEdu });
               }}
-              aria-label={`Degree for education ${index + 1}`}
+              required
+            />
+            <input
+              style={styles.input}
+              type="date"
+              placeholder="Graduation Date"
+              value={edu.graduationDate}
+              onChange={(e) => {
+                const newEdu = [...formData.education];
+                newEdu[index] = { ...edu, graduationDate: e.target.value };
+                setFormData({ ...formData, education: newEdu });
+              }}
+              required
             />
           </div>
         ))}
-        <button
-          type="button"
-          onClick={addEducation}
-          style={styles.addButton}
-          aria-label="Add new education"
-        >
-          + Add Education
-        </button>
       </div>
 
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Skills</h3>
-        {formData.skills.map((skill, index) => (
-          <input
-            key={index}
-            style={styles.input}
-            type="text"
-            placeholder="Skill"
-            value={skill}
-            onChange={(e) => {
-              const updated = [...formData.skills];
-              updated[index] = e.target.value;
-              setFormData({ ...formData, skills: updated });
-            }}
-            aria-label={`Skill ${index + 1}`}
-          />
-        ))}
-        <button
-          type="button"
-          onClick={addSkill}
-          style={styles.addButton}
-          aria-label="Add new skill"
-        >
-          + Add Skill
-        </button>
-      </div>
-
-      {/* Optional section for existing CV text */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Existing CV Text </h3>
-        <textarea
-          style={styles.textarea}
-          placeholder="Paste your existing CV text here to provide more context..."
-          value={formData.existingCV}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              existingCV: e.target.value,
-            })
-          }
-          aria-label="Existing CV Text (optional)"
+        <div style={styles.sectionTitle}>
+          <h2>Skills</h2>
+          <button type="button" onClick={addSkill} style={styles.addButton}>
+            Add Skill
+          </button>
+        </div>
+        <AIResumeEditor
+          section="skills"
+          content={formData.skills.join(', ')}
+          onUpdate={(newContent) => setFormData({
+            ...formData,
+            skills: newContent.split(',').map(skill => skill.trim()).filter(Boolean)
+          })}
         />
       </div>
 
       <button
         type="submit"
-        disabled={isGenerating}
         style={styles.submitButton}
-        aria-label="Generate Resume"
+        disabled={isGenerating}
       >
-        {isGenerating ? 'Generating...' : 'Generate Resume'}
+        {isGenerating ? 'Generating Resume...' : 'Generate Resume'}
       </button>
     </form>
   );
