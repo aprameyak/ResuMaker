@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { rateLimit } from '@/lib/rate-limit';
 import { z } from 'zod';
+import { AIFeedback } from '@/app/types';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -14,13 +15,6 @@ const requestSchema = z.object({
 });
 
 // Define response types
-interface AIFeedback {
-  original: string;
-  suggestion: string;
-  explanation: string;
-  type: 'improvement' | 'correction' | 'enhancement';
-}
-
 interface SuccessResponse {
   status: 'success';
   data: AIFeedback[];
@@ -41,7 +35,7 @@ const limiter = rateLimit({
 export async function POST(request: NextRequest): Promise<NextResponse<APIResponse>> {
   try {
     // Apply rate limiting
-    const identifier = request.ip || 'anonymous';
+    const identifier = request.headers.get('x-real-ip') || 'anonymous';
     const { success } = await limiter.check(10, identifier); // 10 requests per minute per IP
     
     if (!success) {
@@ -107,7 +101,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<APIRespon
               original: original.replace('Original: ', '').trim(),
               suggestion: improved.replace('Improved: ', '').trim(),
               explanation: explanation.replace('Explanation: ', '').trim(),
-              type: 'improvement'
+              type: 'improvement' as const
             };
           })
           .filter(feedback => 
