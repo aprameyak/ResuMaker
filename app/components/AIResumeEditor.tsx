@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { FormData } from '@/app/types';
 
 interface AIFeedback {
@@ -14,27 +14,59 @@ interface AIResumeEditorProps {
   onUpdate: (newContent: string) => void;
 }
 
+const MAX_CONTENT_LENGTH = parseInt(process.env.NEXT_PUBLIC_MAX_CONTENT_LENGTH || '5000', 10);
+const DEBOUNCE_DELAY = 1000;
+
 export default function AIResumeEditor({ section, content, onUpdate }: AIResumeEditorProps) {
   const [feedback, setFeedback] = useState<AIFeedback[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState<number | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [retryTimeout, setRetryTimeout] = useState<number>(0);
+  const lastAnalysisRef = useRef<string>('');
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const analyzeSectionContent = useCallback(async () => {
+    // Don't analyze if content is empty or exceeds limit
+    if (!content.trim() || content.length > MAX_CONTENT_LENGTH) {
+      if (content.length > MAX_CONTENT_LENGTH) {
+        setError(`Content exceeds maximum length of ${MAX_CONTENT_LENGTH} characters`);
+      }
+      return;
+    }
+
+    // Don't analyze if content hasn't changed
+    if (lastAnalysisRef.current === content) {
+      return;
+    }
+
+    // Cancel previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     setIsAnalyzing(true);
     setError(null);
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const response = await fetch('/api/analyze-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          section,
-          content,
-        }),
+        body: JSON.stringify({ section, content }),
+        signal: abortController.signal,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (response.status === 429) {
+          // Rate limit exceeded
+          const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+          setRetryTimeout(Date.now() + retryAfter * 1000);
+          throw new Error('Rate limit exceeded. Please try again later.');
+        }
         throw new Error(errorData.error || 'Failed to analyze content');
       }
 
@@ -43,27 +75,43 @@ export default function AIResumeEditor({ section, content, onUpdate }: AIResumeE
         throw new Error(data.error || 'Failed to analyze content');
       }
       
+      lastAnalysisRef.current = content;
       setFeedback(data.data || []);
+      setRetryCount(0);
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // Ignore aborted requests
+      }
+
       console.error('Error analyzing content:', error);
       setError(error instanceof Error ? error.message : 'Failed to analyze content');
+      
+      // Implement exponential backoff for retries
+      if (retryCount < 3) {
+        const backoffDelay = Math.pow(2, retryCount) * 1000;
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          analyzeSectionContent();
+        }, backoffDelay);
+      }
     } finally {
       setIsAnalyzing(false);
+      abortControllerRef.current = null;
     }
-  }, [section, content]);
+  }, [section, content, retryCount]);
 
   // Debounce content changes before requesting AI feedback
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (content.trim()) {
+      if (content.trim() && Date.now() > retryTimeout) {
         analyzeSectionContent();
       }
-    }, 1000);
+    }, DEBOUNCE_DELAY);
 
     return () => clearTimeout(timer);
-  }, [content, analyzeSectionContent]);
+  }, [content, analyzeSectionContent, retryTimeout]);
 
-  const handleAcceptSuggestion = (index: number) => {
+  const handleAcceptSuggestion = useCallback((index: number) => {
     const suggestion = feedback[index];
     if (!suggestion) return;
 
@@ -82,12 +130,18 @@ export default function AIResumeEditor({ section, content, onUpdate }: AIResumeE
       console.error('Error applying suggestion:', error);
       setError('Failed to apply suggestion. Please try again.');
     }
-  };
+  }, [content, feedback, onUpdate]);
 
-  const handleRejectSuggestion = (index: number) => {
+  const handleRejectSuggestion = useCallback((index: number) => {
     setFeedback(prev => prev.filter((_, i) => i !== index));
     setSelectedSuggestion(null);
-  };
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    setRetryCount(0);
+    analyzeSectionContent();
+  }, [analyzeSectionContent]);
 
   const styles = {
     container: {
@@ -119,6 +173,7 @@ export default function AIResumeEditor({ section, content, onUpdate }: AIResumeE
       borderRadius: '6px',
       backgroundColor: '#ffffff',
       boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      transition: 'border-color 0.2s ease',
     },
     diffView: {
       display: 'flex',
@@ -148,25 +203,28 @@ export default function AIResumeEditor({ section, content, onUpdate }: AIResumeE
       gap: '0.5rem',
       marginTop: '0.5rem',
     },
-    acceptButton: {
+    button: {
       padding: '0.5rem 1rem',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '0.9rem',
+      fontWeight: 500,
+      transition: 'background-color 0.2s ease',
+    },
+    acceptButton: {
       backgroundColor: '#059669',
       color: 'white',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '0.9rem',
-      fontWeight: 500,
+      '&:hover': {
+        backgroundColor: '#047857',
+      },
     },
     rejectButton: {
-      padding: '0.5rem 1rem',
       backgroundColor: '#dc2626',
       color: 'white',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '0.9rem',
-      fontWeight: 500,
+      '&:hover': {
+        backgroundColor: '#b91c1c',
+      },
     },
     loadingIndicator: {
       position: 'absolute' as const,
@@ -198,6 +256,16 @@ export default function AIResumeEditor({ section, content, onUpdate }: AIResumeE
       cursor: 'pointer',
       fontSize: '0.875rem',
       fontWeight: 500,
+      '&:hover': {
+        backgroundColor: '#b91c1c',
+      },
+    },
+    characterCount: {
+      position: 'absolute' as const,
+      bottom: '0.5rem',
+      right: '1rem',
+      fontSize: '0.875rem',
+      color: content.length > MAX_CONTENT_LENGTH ? '#dc2626' : '#6b7280',
     },
   };
 
@@ -207,20 +275,29 @@ export default function AIResumeEditor({ section, content, onUpdate }: AIResumeE
         <div style={styles.errorContainer}>
           <span>{error}</span>
           <button
-            onClick={() => analyzeSectionContent()}
+            onClick={handleRetry}
             style={styles.retryButton}
+            disabled={Date.now() < retryTimeout}
           >
-            Retry
+            {Date.now() < retryTimeout
+              ? `Retry in ${Math.ceil((retryTimeout - Date.now()) / 1000)}s`
+              : 'Retry'}
           </button>
         </div>
       )}
       
-      <textarea
-        value={content}
-        onChange={(e) => onUpdate(e.target.value)}
-        style={styles.editor}
-        placeholder={`Enter your ${section} content here...`}
-      />
+      <div style={{ position: 'relative' }}>
+        <textarea
+          value={content}
+          onChange={(e) => onUpdate(e.target.value)}
+          style={styles.editor}
+          placeholder={`Enter your ${section} content here...`}
+          maxLength={MAX_CONTENT_LENGTH}
+        />
+        <div style={styles.characterCount}>
+          {content.length} / {MAX_CONTENT_LENGTH}
+        </div>
+      </div>
       
       {isAnalyzing && (
         <div style={styles.loadingIndicator}>
@@ -261,7 +338,7 @@ export default function AIResumeEditor({ section, content, onUpdate }: AIResumeE
                     e.stopPropagation();
                     handleAcceptSuggestion(index);
                   }}
-                  style={styles.acceptButton}
+                  style={{ ...styles.button, ...styles.acceptButton }}
                 >
                   Accept
                 </button>
@@ -270,7 +347,7 @@ export default function AIResumeEditor({ section, content, onUpdate }: AIResumeE
                     e.stopPropagation();
                     handleRejectSuggestion(index);
                   }}
-                  style={styles.rejectButton}
+                  style={{ ...styles.button, ...styles.rejectButton }}
                 >
                   Reject
                 </button>
