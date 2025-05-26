@@ -2,16 +2,18 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
+  fallback?: ReactNode;
 }
 
 interface State {
   hasError: boolean;
-  error?: Error;
+  error: Error | null;
 }
 
 export default class ErrorBoundary extends Component<Props, State> {
   public state: State = {
-    hasError: false
+    hasError: false,
+    error: null,
   };
 
   public static getDerivedStateFromError(error: Error): State {
@@ -22,37 +24,30 @@ export default class ErrorBoundary extends Component<Props, State> {
     console.error('Uncaught error:', error, errorInfo);
   }
 
+  private handleRetry = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
   public render() {
     if (this.state.hasError) {
-      return (
-        <div style={{
-          padding: '2rem',
-          textAlign: 'center',
-          maxWidth: '600px',
-          margin: '2rem auto',
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h2 style={{ color: '#dc2626', marginBottom: '1rem' }}>
-            Something went wrong
-          </h2>
-          <p style={{ color: '#4b5563', marginBottom: '1rem' }}>
-            We apologize for the inconvenience. Please try refreshing the page or contact support if the problem persists.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              backgroundColor: '#3b82f6',
-              color: '#fff',
-              padding: '0.5rem 1rem',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            Refresh Page
-          </button>
+      return this.props.fallback || (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Something went wrong
+              </h2>
+              <p className="text-gray-600 mb-6">
+                {this.state.error?.message || 'An unexpected error occurred'}
+              </p>
+              <button
+                onClick={this.handleRetry}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
         </div>
       );
     }
