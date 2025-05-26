@@ -1,83 +1,153 @@
-import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
-import { APIResponse, AIFeedback } from '@/app/types';
-
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY is not set in environment variables');
-}
+import { NextRequest, NextResponse } from 'next/server';
+import { OpenAI } from 'openai';
+import { rateLimit } from '@/lib/rate-limit';
+import { z } from 'zod';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(request: Request) {
-  try {
-    const { section, content } = await request.json();
+// Validate request body schema
+const requestSchema = z.object({
+  section: z.string(),
+  content: z.string().min(1),
+});
 
-    if (!section || !content) {
-      return NextResponse.json(
-        { error: 'Missing required fields', status: 'error' } as APIResponse<never>,
+// Define response types
+interface AIFeedback {
+  original: string;
+  suggestion: string;
+  explanation: string;
+  type: 'improvement' | 'correction' | 'enhancement';
+}
+
+interface SuccessResponse {
+  status: 'success';
+  data: AIFeedback[];
+}
+
+interface ErrorResponse {
+  status: 'error';
+  error: string;
+}
+
+type APIResponse = SuccessResponse | ErrorResponse;
+
+const limiter = rateLimit({
+  interval: 60 * 1000, // 1 minute
+  uniqueTokenPerInterval: 500, // Max 500 users per minute
+});
+
+export async function POST(request: NextRequest): Promise<NextResponse<APIResponse>> {
+  try {
+    // Apply rate limiting
+    const identifier = request.ip || 'anonymous';
+    const { success } = await limiter.check(10, identifier); // 10 requests per minute per IP
+    
+    if (!success) {
+      return NextResponse.json<ErrorResponse>(
+        { status: 'error', error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
+    // Parse and validate request body
+    const body = await request.json();
+    const validatedData = requestSchema.safeParse(body);
+
+    if (!validatedData.success) {
+      return NextResponse.json<ErrorResponse>(
+        { status: 'error', error: 'Invalid request body' },
         { status: 400 }
       );
     }
 
-    const prompt = `
-      Analyze the following ${section} content from a resume and provide specific suggestions for improvement.
-      For each suggestion, provide:
-      1. The original text
-      2. A suggested improvement
-      3. A brief explanation of why this change would make the resume stronger
-      4. The type of change (improvement, correction, or enhancement)
+    const { section, content } = validatedData.data;
 
-      Content to analyze:
-      ${content}
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json<ErrorResponse>(
+        { status: 'error', error: 'OpenAI API key not configured' },
+        { status: 500 }
+      );
+    }
 
-      Provide the response in the following JSON format:
-      [
-        {
-          "original": "original text",
-          "suggestion": "improved text",
-          "explanation": "why this change helps",
-          "type": "improvement|correction|enhancement"
+    // Call OpenAI API with retry logic
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const completion = await openai.chat.completions.create({
+          model: 'gpt-4-turbo-preview',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a professional resume reviewer. Analyze the following ${section} content and provide specific, actionable suggestions for improvement. Focus on clarity, impact, and professional presentation. For each suggestion, provide the original text, the suggested improvement, and a brief explanation of why the change would be beneficial.`
+            },
+            {
+              role: 'user',
+              content
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000,
+        });
+
+        const suggestions = completion.choices[0]?.message?.content;
+        if (!suggestions) {
+          throw new Error('No suggestions received from OpenAI');
         }
-      ]
 
-      Focus on:
-      - Using strong action verbs
-      - Quantifying achievements
-      - Removing filler words
-      - Improving clarity and impact
-      - Fixing grammar and style issues
-      - Making the content more professional
-    `;
+        // Parse the suggestions into structured feedback
+        const feedback: AIFeedback[] = suggestions.split('\n\n')
+          .filter(Boolean)
+          .map(suggestion => {
+            const [original, improved, explanation] = suggestion.split('\n');
+            return {
+              original: original.replace('Original: ', '').trim(),
+              suggestion: improved.replace('Improved: ', '').trim(),
+              explanation: explanation.replace('Explanation: ', '').trim(),
+              type: 'improvement'
+            };
+          })
+          .filter(feedback => 
+            feedback.original && 
+            feedback.suggestion && 
+            feedback.explanation
+          );
 
-    const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert resume writer and career coach. Your goal is to help improve resume content to be more impactful and professional."
-        },
-        {
-          role: "user",
-          content: prompt
+        return NextResponse.json<SuccessResponse>(
+          { status: 'success', data: feedback },
+          { status: 200 }
+        );
+      } catch (error) {
+        console.error(`Attempt ${attempt + 1} failed:`, error);
+        lastError = error as Error;
+        
+        // Wait before retrying (exponential backoff)
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
-      ],
-      model: "gpt-4-turbo-preview",
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
+      }
+    }
 
-    const suggestions = JSON.parse(completion.choices[0]?.message?.content || '[]') as AIFeedback[];
-
-    return NextResponse.json(
-      { data: suggestions, status: 'success' } as APIResponse<AIFeedback[]>,
-      { status: 200 }
+    // If all retries failed
+    console.error('All retry attempts failed:', lastError);
+    return NextResponse.json<ErrorResponse>(
+      { 
+        status: 'error', 
+        error: 'Failed to get AI suggestions. Please try again later.' 
+      },
+      { status: 500 }
     );
+
   } catch (error) {
-    console.error('Error analyzing content:', error);
-    return NextResponse.json(
-      { error: 'Failed to analyze content', status: 'error' } as APIResponse<never>,
+    console.error('Unexpected error:', error);
+    return NextResponse.json<ErrorResponse>(
+      { 
+        status: 'error', 
+        error: 'An unexpected error occurred. Please try again later.' 
+      },
       { status: 500 }
     );
   }
