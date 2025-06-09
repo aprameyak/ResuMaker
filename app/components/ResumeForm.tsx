@@ -11,33 +11,35 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
   const [errors, setErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState<FormData>({
     personalInfo: {
-      name: '',
+      fullName: '',
+      title: '',
       email: '',
       phone: '',
       location: '',
-      summary: '',
+      portfolio: '',
+      linkedin: '',
+      github: ''
     },
-    experience: [{
-      company: '',
-      position: '',
-      startDate: '',
-      endDate: '',
-      description: ''
-    }],
-    education: [{
-      school: '',
-      degree: '',
-      graduationDate: ''
-    }],
-    skills: [''],
+    experience: [],
+    education: [],
+    projects: [],
+    skills: {
+      technical: [],
+      soft: [],
+      languages: [],
+      certifications: []
+    }
   });
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
     // Validate personal info
-    if (!formData.personalInfo.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!formData.personalInfo.fullName.trim()) {
+      newErrors.fullName = 'Full Name is required';
+    }
+    if (!formData.personalInfo.title.trim()) {
+      newErrors.title = 'Title is required';
     }
     if (!formData.personalInfo.email.trim()) {
       newErrors.email = 'Email is required';
@@ -50,9 +52,37 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
     if (!formData.personalInfo.location.trim()) {
       newErrors.location = 'Location is required';
     }
-    if (!formData.personalInfo.summary.trim()) {
-      newErrors.summary = 'Professional summary is required';
+    if (!formData.personalInfo.portfolio?.trim()) {
+      newErrors.portfolio = 'Portfolio is required';
     }
+    if (!formData.personalInfo.linkedin?.trim()) {
+      newErrors.linkedin = 'LinkedIn is required';
+    }
+    if (!formData.personalInfo.github?.trim()) {
+      newErrors.github = 'GitHub is required';
+    }
+
+    // Validate education
+    formData.education.forEach((edu, index) => {
+      if (!edu.institution.trim()) {
+        newErrors[`education_${index}_institution`] = 'Institution is required';
+      }
+      if (!edu.degree.trim()) {
+        newErrors[`education_${index}_degree`] = 'Degree is required';
+      }
+      if (!edu.field.trim()) {
+        newErrors[`education_${index}_field`] = 'Field is required';
+      }
+      if (!edu.startDate.trim()) {
+        newErrors[`education_${index}_startDate`] = 'Start date is required';
+      }
+      if (!edu.endDate.trim()) {
+        newErrors[`education_${index}_endDate`] = 'End date is required';
+      }
+      if (!edu.location.trim()) {
+        newErrors[`education_${index}_location`] = 'Location is required';
+      }
+    });
 
     // Validate experience
     formData.experience.forEach((exp, index) => {
@@ -62,30 +92,32 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
       if (!exp.position.trim()) {
         newErrors[`experience_${index}_position`] = 'Position is required';
       }
-      if (!exp.startDate) {
+      if (!exp.startDate.trim()) {
         newErrors[`experience_${index}_startDate`] = 'Start date is required';
+      }
+      if (!exp.endDate.trim()) {
+        newErrors[`experience_${index}_endDate`] = 'End date is required';
       }
       if (!exp.description.trim()) {
         newErrors[`experience_${index}_description`] = 'Description is required';
       }
-    });
-
-    // Validate education
-    formData.education.forEach((edu, index) => {
-      if (!edu.school.trim()) {
-        newErrors[`education_${index}_school`] = 'School is required';
-      }
-      if (!edu.degree.trim()) {
-        newErrors[`education_${index}_degree`] = 'Degree is required';
-      }
-      if (!edu.graduationDate) {
-        newErrors[`education_${index}_graduationDate`] = 'Graduation date is required';
+      if (!exp.location.trim()) {
+        newErrors[`experience_${index}_location`] = 'Location is required';
       }
     });
 
     // Validate skills
-    if (formData.skills.length === 0 || !formData.skills[0].trim()) {
-      newErrors.skills = 'At least one skill is required';
+    if (formData.skills.technical.length === 0) {
+      newErrors.technicalSkills = 'At least one technical skill is required';
+    }
+    if (formData.skills.soft.length === 0) {
+      newErrors.softSkills = 'At least one soft skill is required';
+    }
+    if (formData.skills.languages.length === 0) {
+      newErrors.languages = 'At least one language is required';
+    }
+    if (formData.skills.certifications.length === 0) {
+      newErrors.certifications = 'At least one certification is required';
     }
 
     setErrors(newErrors);
@@ -116,13 +148,17 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
   };
 
   const addExperience = () => {
-    if (formData.experience.length >= 10) {
-      setErrors({ experience: 'Maximum 10 experiences allowed' });
-      return;
-    }
     setFormData((prev) => ({
       ...prev,
-      experience: [...prev.experience, { company: '', position: '', startDate: '', endDate: '', description: '' }]
+      experience: [...prev.experience, {
+        company: '',
+        position: '',
+        startDate: '',
+        endDate: '',
+        description: '',
+        location: '',
+        achievements: []
+      }]
     }));
   };
 
@@ -138,13 +174,17 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
   };
 
   const addEducation = () => {
-    if (formData.education.length >= 5) {
-      setErrors({ education: 'Maximum 5 education entries allowed' });
-      return;
-    }
     setFormData((prev) => ({
       ...prev,
-      education: [...prev.education, { school: '', degree: '', graduationDate: '' }]
+      education: [...prev.education, {
+        institution: '',
+        degree: '',
+        field: '',
+        startDate: '',
+        endDate: '',
+        location: '',
+        achievements: []
+      }]
     }));
   };
 
@@ -160,24 +200,30 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
   };
 
   const addSkill = () => {
-    if (formData.skills.length >= 20) {
-      setErrors({ skills: 'Maximum 20 skills allowed' });
+    if (formData.skills.technical.length >= 20) {
+      setErrors({ technicalSkills: 'Maximum 20 technical skills allowed' });
       return;
     }
     setFormData((prev) => ({
       ...prev,
-      skills: [...prev.skills, '']
+      skills: {
+        ...prev.skills,
+        technical: [...prev.skills.technical, '']
+      }
     }));
   };
 
   const removeSkill = (index: number) => {
-    if (formData.skills.length <= 1) {
-      setErrors({ skills: 'At least one skill is required' });
+    if (formData.skills.technical.length <= 1) {
+      setErrors({ technicalSkills: 'At least one technical skill is required' });
       return;
     }
     setFormData((prev) => ({
       ...prev,
-      skills: prev.skills.filter((_, i) => i !== index)
+      skills: {
+        ...prev.skills,
+        technical: prev.skills.technical.filter((_, i) => i !== index)
+      }
     }));
   };
 
@@ -317,22 +363,22 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
           <input
             style={{
               ...styles.input,
-              ...(errors.name ? styles.errorField : {})
+              ...(errors.fullName ? styles.errorField : {})
             }}
             type="text"
             placeholder="Full Name"
-            value={formData.personalInfo.name}
+            value={formData.personalInfo.fullName}
             onChange={(e) => {
-              setErrors((prev) => ({ ...prev, name: '' }));
+              setErrors((prev) => ({ ...prev, fullName: '' }));
               setFormData({
                 ...formData,
-                personalInfo: { ...formData.personalInfo, name: e.target.value }
+                personalInfo: { ...formData.personalInfo, fullName: e.target.value }
               });
             }}
-            data-error={!!errors.name}
+            data-error={!!errors.fullName}
             required
           />
-          {errors.name && <div style={styles.error}>{errors.name}</div>}
+          {errors.fullName && <div style={styles.error}>{errors.fullName}</div>}
 
           <input
             style={{
@@ -394,18 +440,65 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
           />
           {errors.location && <div style={styles.error}>{errors.location}</div>}
 
-          <AIResumeEditor
-            section="summary"
-            content={formData.personalInfo.summary}
-            onUpdate={(newContent) => {
-              setErrors((prev) => ({ ...prev, summary: '' }));
+          <input
+            style={{
+              ...styles.input,
+              ...(errors.portfolio ? styles.errorField : {})
+            }}
+            type="text"
+            placeholder="Portfolio"
+            value={formData.personalInfo.portfolio}
+            onChange={(e) => {
+              setErrors((prev) => ({ ...prev, portfolio: '' }));
               setFormData({
                 ...formData,
-                personalInfo: { ...formData.personalInfo, summary: newContent }
+                personalInfo: { ...formData.personalInfo, portfolio: e.target.value }
               });
             }}
+            data-error={!!errors.portfolio}
+            required
           />
-          {errors.summary && <div style={styles.error}>{errors.summary}</div>}
+          {errors.portfolio && <div style={styles.error}>{errors.portfolio}</div>}
+
+          <input
+            style={{
+              ...styles.input,
+              ...(errors.linkedin ? styles.errorField : {})
+            }}
+            type="text"
+            placeholder="LinkedIn"
+            value={formData.personalInfo.linkedin}
+            onChange={(e) => {
+              setErrors((prev) => ({ ...prev, linkedin: '' }));
+              setFormData({
+                ...formData,
+                personalInfo: { ...formData.personalInfo, linkedin: e.target.value }
+              });
+            }}
+            data-error={!!errors.linkedin}
+            required
+          />
+          {errors.linkedin && <div style={styles.error}>{errors.linkedin}</div>}
+
+          <input
+            style={{
+              ...styles.input,
+              ...(errors.github ? styles.errorField : {})
+            }}
+            type="text"
+            placeholder="GitHub"
+            value={formData.personalInfo.github}
+            onChange={(e) => {
+              setErrors((prev) => ({ ...prev, github: '' }));
+              setFormData({
+                ...formData,
+                personalInfo: { ...formData.personalInfo, github: e.target.value }
+              });
+            }}
+            data-error={!!errors.github}
+            required
+          />
+          {errors.github && <div style={styles.error}>{errors.github}</div>}
         </div>
 
         <div style={styles.section}>
@@ -542,17 +635,17 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
               <input
                 style={styles.input}
                 type="text"
-                placeholder="School"
-                value={edu.school}
+                placeholder="Institution"
+                value={edu.institution}
                 onChange={(e) => {
                   const newEdu = [...formData.education];
-                  newEdu[index] = { ...edu, school: e.target.value };
+                  newEdu[index] = { ...edu, institution: e.target.value };
                   setFormData({ ...formData, education: newEdu });
                 }}
-                data-error={!!errors[`education_${index}_school`]}
+                data-error={!!errors[`education_${index}_institution`]}
                 required
               />
-              {errors[`education_${index}_school`] && <div style={styles.error}>{errors[`education_${index}_school`]}</div>}
+              {errors[`education_${index}_institution`] && <div style={styles.error}>{errors[`education_${index}_institution`]}</div>}
 
               <input
                 style={styles.input}
@@ -571,18 +664,63 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
 
               <input
                 style={styles.input}
-                type="date"
-                placeholder="Graduation Date"
-                value={edu.graduationDate}
+                type="text"
+                placeholder="Field"
+                value={edu.field}
                 onChange={(e) => {
                   const newEdu = [...formData.education];
-                  newEdu[index] = { ...edu, graduationDate: e.target.value };
+                  newEdu[index] = { ...edu, field: e.target.value };
                   setFormData({ ...formData, education: newEdu });
                 }}
-                data-error={!!errors[`education_${index}_graduationDate`]}
+                data-error={!!errors[`education_${index}_field`]}
                 required
               />
-              {errors[`education_${index}_graduationDate`] && <div style={styles.error}>{errors[`education_${index}_graduationDate`]}</div>}
+              {errors[`education_${index}_field`] && <div style={styles.error}>{errors[`education_${index}_field`]}</div>}
+
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <input
+                  style={{ ...styles.input, marginBottom: 0 }}
+                  type="date"
+                  placeholder="Start Date"
+                  value={edu.startDate}
+                  onChange={(e) => {
+                    const newEdu = [...formData.education];
+                    newEdu[index] = { ...edu, startDate: e.target.value };
+                    setFormData({ ...formData, education: newEdu });
+                  }}
+                  data-error={!!errors[`education_${index}_startDate`]}
+                  required
+                />
+                {errors[`education_${index}_startDate`] && <div style={styles.error}>{errors[`education_${index}_startDate`]}</div>}
+
+                <input
+                  style={{ ...styles.input, marginBottom: 0 }}
+                  type="date"
+                  placeholder="End Date"
+                  value={edu.endDate}
+                  onChange={(e) => {
+                    const newEdu = [...formData.education];
+                    newEdu[index] = { ...edu, endDate: e.target.value };
+                    setFormData({ ...formData, education: newEdu });
+                  }}
+                />
+              </div>
+              {errors[`education_${index}_endDate`] && <div style={styles.error}>{errors[`education_${index}_endDate`]}</div>}
+
+              <input
+                style={styles.input}
+                type="text"
+                placeholder="Location"
+                value={edu.location}
+                onChange={(e) => {
+                  const newEdu = [...formData.education];
+                  newEdu[index] = { ...edu, location: e.target.value };
+                  setFormData({ ...formData, education: newEdu });
+                }}
+                data-error={!!errors[`education_${index}_location`]}
+                required
+              />
+              {errors[`education_${index}_location`] && <div style={styles.error}>{errors[`education_${index}_location`]}</div>}
             </div>
           ))}
         </div>
@@ -594,21 +732,24 @@ export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) =>
               type="button" 
               onClick={addSkill} 
               style={styles.addButton}
-              disabled={formData.skills.length >= 20}
+              disabled={formData.skills.technical.length >= 20}
             >
               Add Skill
             </button>
           </div>
-          {errors.skills && <div style={styles.sectionError}>{errors.skills}</div>}
+          {errors.technicalSkills && <div style={styles.sectionError}>{errors.technicalSkills}</div>}
           
           <AIResumeEditor
             section="skills"
-            content={formData.skills.join(', ')}
+            content={formData.skills.technical.join(', ')}
             onUpdate={(newContent) => {
-              setErrors((prev) => ({ ...prev, skills: '' }));
+              setErrors((prev) => ({ ...prev, technicalSkills: '' }));
               setFormData({
                 ...formData,
-                skills: newContent.split(',').map(skill => skill.trim()).filter(Boolean)
+                skills: {
+                  ...formData.skills,
+                  technical: newContent.split(',').map(skill => skill.trim()).filter(Boolean)
+                }
               });
             }}
           />

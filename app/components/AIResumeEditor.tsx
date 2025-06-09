@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FormData } from '@/app/types';
-
-interface AIFeedback {
-  original: string;
-  suggestion: string;
-  explanation: string;
-  type: 'improvement' | 'correction' | 'enhancement';
-}
+import { FormData, ResumeSection, AIFeedback, APIResponse } from '@/app/types';
 
 interface AIResumeEditorProps {
-  section: keyof FormData;
+  section: ResumeSection;
   content: string;
   onUpdate: (newContent: string) => void;
 }
@@ -70,13 +63,13 @@ export default function AIResumeEditor({ section, content, onUpdate }: AIResumeE
         throw new Error(errorData.error || 'Failed to analyze content');
       }
 
-      const data = await response.json();
-      if (data.status === 'error') {
-        throw new Error(data.error || 'Failed to analyze content');
+      const responseData = await response.json() as APIResponse<AIFeedback[]>;
+      if (responseData.status === 'error' || !responseData.data) {
+        throw new Error(responseData.error || 'Failed to analyze content');
       }
       
       lastAnalysisRef.current = content;
-      setFeedback(data.data || []);
+      setFeedback(responseData.data);
       setRetryCount(0);
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {

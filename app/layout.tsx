@@ -1,21 +1,38 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import ErrorBoundary from './components/ErrorBoundary';
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
-  title: "ResuMaker - AI-Powered Resume Builder",
-  description: "Create professional resumes with AI-powered suggestions and real-time feedback.",
+  title: 'ResuMaker - Professional Resume Builder',
+  description: 'Create professional, ATS-friendly resumes with our AI-powered resume builder.',
+  keywords: ['resume builder', 'cv maker', 'professional resume', 'AI resume', 'job application'],
+  authors: [{ name: 'ResuMaker Team' }],
+  metadataBase: new URL('https://resumaker-six.vercel.app'),
+  openGraph: {
+    title: 'ResuMaker - Create Professional Resumes',
+    description: 'Build a standout resume in minutes with our intuitive AI-powered resume builder',
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'ResuMaker',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ResuMaker - Create Professional Resumes',
+    description: 'Build a standout resume in minutes with our intuitive AI-powered resume builder',
+  },
+  robots: 'index, follow',
 };
 
 export default function RootLayout({
@@ -24,12 +41,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
-      </body>
+    <html lang="en" className={inter.variable}>
+      <body>{children}</body>
     </html>
   );
 }

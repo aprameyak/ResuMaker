@@ -7,7 +7,23 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-cal-sans)', 'system-ui', 'sans-serif'],
+      },
       colors: {
+        border: 'var(--border)',
+        background: 'var(--background)',
+        primary: {
+          DEFAULT: 'var(--primary)',
+          dark: 'var(--primary-dark)',
+          light: 'var(--primary-light)',
+        },
+        secondary: 'var(--secondary)',
+        accent: 'var(--accent)',
+        success: 'var(--success)',
+        error: 'var(--error)',
+        warning: 'var(--warning)',
         violet: {
           50: '#f5f3ff',
           100: '#ede9fe',
@@ -35,5 +51,8 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+  ],
 } 

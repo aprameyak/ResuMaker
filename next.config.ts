@@ -1,14 +1,19 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   env: {
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
   },
-  typescript: {
-    ignoreBuildErrors: false,
-  },
+  reactStrictMode: true,
   swcMinify: true,
   poweredByHeader: false,
+  compress: true,
+  images: {
+    domains: [],
+    unoptimized: false,
+  },
+  experimental: {
+    optimizeCss: true,
+  },
   async headers() {
     return [
       {
@@ -57,4 +62,4 @@ const nextConfig: NextConfig = {
   }
 };
 
-export default nextConfig;
+module.exports = nextConfig;

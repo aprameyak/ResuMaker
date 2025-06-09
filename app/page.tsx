@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import ResumeForm from './components/ResumeForm';
 import ResumeTemplate from './components/ResumeTemplate';
 import { FormData } from '@/app/types';
+import Link from 'next/link';
+import { FiUpload, FiEdit, FiTarget } from 'react-icons/fi';
 
 export default function Home() {
   const [resumeData, setResumeData] = useState<FormData | null>(null);
@@ -140,101 +142,132 @@ export default function Home() {
   };
 
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <div style={styles.headerContent}>
-          <h1 style={styles.title}>Create Your Professional Resume</h1>
-          <p style={styles.subtitle}>
-            Build a standout resume in minutes with our intuitive builder
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* Hero Section */}
+      <header className="py-16 px-4 text-center">
+        <h1 className="text-5xl font-bold text-gray-900 mb-4">
+          Create Your Perfect Resume
+        </h1>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          Professional resumes made simple. AI-powered guidance helps you create, customize, 
+          and optimize your resume for your dream job.
+        </p>
       </header>
 
-      <main style={styles.main}>
-        {!resumeData ? (
-          <div style={styles.formContainer}>
-            <div style={styles.formHeader}>
-              <h2 style={styles.formTitle}>Enter Your Details</h2>
-              <p style={styles.formSubtitle}>
-                Fill in the form below to generate your professional resume
+      {/* Main Options Grid */}
+      <main className="max-w-6xl mx-auto px-4 py-12">
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* Upload Existing Resume */}
+          <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow">
+            <div className="text-center mb-6">
+              <div className="bg-blue-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <FiUpload className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                Upload Existing Resume
+              </h2>
+              <p className="text-gray-600">
+                Import your current resume and let our AI enhance it with professional formatting and suggestions.
               </p>
             </div>
-            <ResumeForm
-              onSubmit={(data) => {
-                setResumeData(data);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            />
+            <Link 
+              href="/upload"
+              className="block w-full py-3 px-4 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Upload Resume
+            </Link>
           </div>
-        ) : (
-          <div style={styles.resumeContainer}>
-            <div style={styles.resumeHeader}>
-              <h2 style={styles.resumeTitle}>
-                {isEditing ? 'Edit Your Resume' : 'Your Professional Resume'}
-              </h2>
-              <div style={styles.buttonContainer}>
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  style={styles.primaryButton}
-                  aria-label={isEditing ? 'Save changes' : 'Edit resume'}
-                >
-                  {isEditing ? 'Save Changes' : 'Edit Resume'}
-                </button>
-                {!isEditing && (
-                  <button
-                    onClick={() => {
-                      setResumeData(null);
-                      setIsEditing(false);
-                    }}
-                    style={styles.secondaryButton}
-                    aria-label="Create new resume"
-                  >
-                    Create New Resume
-                  </button>
-                )}
+
+          {/* Start Fresh */}
+          <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow">
+            <div className="text-center mb-6">
+              <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <FiEdit className="w-8 h-8 text-green-600" />
               </div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                Start From Scratch
+              </h2>
+              <p className="text-gray-600">
+                Create a new resume with step-by-step guidance and industry-specific templates.
+              </p>
             </div>
-            <div style={styles.resumeContent}>
-              <ResumeTemplate
-                data={resumeData}
-                isEditable={isEditing}
-                onEdit={(newData) => {
-                  setResumeData(newData);
-                  if (isEditing) {
-                    setIsEditing(false);
-                  }
-                }}
-              />
-            </div>
-            {!isEditing && (
-              <button
-                onClick={() => window.print()}
-                style={styles.downloadButton}
-                aria-label="Download resume as PDF"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Download PDF
-              </button>
-            )}
+            <Link 
+              href="/create"
+              className="block w-full py-3 px-4 bg-green-600 text-white text-center rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Create New Resume
+            </Link>
           </div>
-        )}
+
+          {/* Tailor for Job */}
+          <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow">
+            <div className="text-center mb-6">
+              <div className="bg-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <FiTarget className="w-8 h-8 text-purple-600" />
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                Tailor for Job
+              </h2>
+              <p className="text-gray-600">
+                Optimize your resume for specific job postings with AI-powered customization.
+              </p>
+            </div>
+            <Link 
+              href="/tailor"
+              className="block w-full py-3 px-4 bg-purple-600 text-white text-center rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Tailor Resume
+            </Link>
+          </div>
+        </div>
+
+        {/* Features Section */}
+        <section className="mt-24">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+            Why Choose ResuMaker?
+          </h2>
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-2">AI-Powered Insights</h3>
+              <p className="text-gray-600">Get intelligent suggestions to improve your resume's impact</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-2">Professional Templates</h3>
+              <p className="text-gray-600">Industry-tested templates that stand out to recruiters</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-2">Easy Customization</h3>
+              <p className="text-gray-600">Tailor your resume for different jobs effortlessly</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-2">ATS-Friendly</h3>
+              <p className="text-gray-600">Ensure your resume gets past applicant tracking systems</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Call to Action */}
+        <section className="mt-24 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Ready to Create Your Professional Resume?
+          </h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Join thousands of job seekers who've found success with ResuMaker
+          </p>
+          <Link 
+            href="/create"
+            className="inline-block py-4 px-8 bg-blue-600 text-white text-lg rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Get Started Now
+          </Link>
+        </section>
       </main>
 
-      <footer style={styles.footer}>
-        <p>© {new Date().getFullYear()} ResuMaker. All rights reserved.</p>
+      {/* Footer */}
+      <footer className="mt-24 py-8 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 text-center text-gray-600">
+          <p>© {new Date().getFullYear()} ResuMaker. All rights reserved.</p>
+        </div>
       </footer>
     </div>
   );

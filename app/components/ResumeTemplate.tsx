@@ -126,23 +126,40 @@ export default function ResumeTemplate({ data, isEditable = false, onEdit }: Res
       </div>
       <div ref={resumeRef} role="document">
         <header style={styles.header}>
-          {isEditable ? (
-            <input
-              value={data.personalInfo.name}
-              onChange={(e) =>
-                handleEdit('personalInfo', { ...data.personalInfo, name: e.target.value })
-              }
-              style={styles.nameInput}
-              aria-label="Edit full name"
-            />
-          ) : (
-            <h1 style={styles.resumeTitle}>{data.personalInfo.name}</h1>
-          )}
-          <div style={styles.contactInfo}>
-            <p>
-              {data.personalInfo.email} | {data.personalInfo.phone}
-            </p>
-            <p>{data.personalInfo.location}</p>
+          <div className="resume-header">
+            <div className="name-title">
+              {isEditable ? (
+                <div>
+                  <input
+                    value={data.personalInfo.fullName}
+                    onChange={(e) =>
+                      handleEdit('personalInfo', { ...data.personalInfo, fullName: e.target.value })
+                    }
+                    className="editable-field"
+                  />
+                  <input
+                    value={data.personalInfo.title}
+                    onChange={(e) =>
+                      handleEdit('personalInfo', { ...data.personalInfo, title: e.target.value })
+                    }
+                    className="editable-field"
+                  />
+                </div>
+              ) : (
+                <>
+                  <h1>{data.personalInfo.fullName}</h1>
+                  <h2>{data.personalInfo.title}</h2>
+                </>
+              )}
+            </div>
+            <div className="contact-info">
+              <p>{data.personalInfo.email}</p>
+              <p>{data.personalInfo.phone}</p>
+              <p>{data.personalInfo.location}</p>
+              {data.personalInfo.portfolio && <p>Portfolio: {data.personalInfo.portfolio}</p>}
+              {data.personalInfo.linkedin && <p>LinkedIn: {data.personalInfo.linkedin}</p>}
+              {data.personalInfo.github && <p>GitHub: {data.personalInfo.github}</p>}
+            </div>
           </div>
         </header>
 
@@ -152,15 +169,15 @@ export default function ResumeTemplate({ data, isEditable = false, onEdit }: Res
           </h2>
           {isEditable ? (
             <textarea
-              value={data.personalInfo.summary}
+              value={data.personalInfo.title}
               onChange={(e) =>
-                handleEdit('personalInfo', { ...data.personalInfo, summary: e.target.value })
+                handleEdit('personalInfo', { ...data.personalInfo, title: e.target.value })
               }
               style={styles.editTextarea}
               aria-label="Edit professional summary"
             />
           ) : (
-            <p>{data.personalInfo.summary}</p>
+            <p>{data.personalInfo.title}</p>
           )}
         </section>
 
@@ -221,16 +238,92 @@ export default function ResumeTemplate({ data, isEditable = false, onEdit }: Res
           <h2 style={styles.sectionTitle} id="skills-heading">
             Skills
           </h2>
-          {isEditable ? (
-            <input
-              value={data.skills.join(', ')}
-              onChange={(e) => handleEdit('skills', e.target.value.split(', '))}
-              style={styles.editInput}
-              aria-label="Edit skills (comma separated)"
-            />
-          ) : (
-            <p>{data.skills.join(', ')}</p>
-          )}
+          <div className="skills-grid">
+            <div>
+              <h3>Technical Skills</h3>
+              {isEditable ? (
+                <textarea
+                  value={data.skills.technical.join('\n')}
+                  onChange={(e) =>
+                    handleEdit('skills', {
+                      ...data.skills,
+                      technical: e.target.value.split('\n').filter(Boolean)
+                    })
+                  }
+                  className="editable-field"
+                />
+              ) : (
+                <ul>
+                  {data.skills.technical.map((skill, index) => (
+                    <li key={index}>{skill}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h3>Soft Skills</h3>
+              {isEditable ? (
+                <textarea
+                  value={data.skills.soft.join('\n')}
+                  onChange={(e) =>
+                    handleEdit('skills', {
+                      ...data.skills,
+                      soft: e.target.value.split('\n').filter(Boolean)
+                    })
+                  }
+                  className="editable-field"
+                />
+              ) : (
+                <ul>
+                  {data.skills.soft.map((skill, index) => (
+                    <li key={index}>{skill}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h3>Languages</h3>
+              {isEditable ? (
+                <textarea
+                  value={data.skills.languages.join('\n')}
+                  onChange={(e) =>
+                    handleEdit('skills', {
+                      ...data.skills,
+                      languages: e.target.value.split('\n').filter(Boolean)
+                    })
+                  }
+                  className="editable-field"
+                />
+              ) : (
+                <ul>
+                  {data.skills.languages.map((lang, index) => (
+                    <li key={index}>{lang}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h3>Certifications</h3>
+              {isEditable ? (
+                <textarea
+                  value={data.skills.certifications.join('\n')}
+                  onChange={(e) =>
+                    handleEdit('skills', {
+                      ...data.skills,
+                      certifications: e.target.value.split('\n').filter(Boolean)
+                    })
+                  }
+                  className="editable-field"
+                />
+              ) : (
+                <ul>
+                  {data.skills.certifications.map((cert, index) => (
+                    <li key={index}>{cert}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         </section>
       </div>
     </div>

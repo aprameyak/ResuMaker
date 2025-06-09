@@ -1,52 +1,48 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+'use client';
+
+import React from 'react';
 
 interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
+  children: React.ReactNode;
 }
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  error?: Error;
 }
 
-export default class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-  };
+export class ErrorBoundary extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // You can log the error to an error reporting service here
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
-  private handleRetry = () => {
-    this.setState({ hasError: false, error: null });
-  };
-
-  public render() {
+  render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
+      return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Something went wrong
-              </h2>
-              <p className="text-gray-600 mb-6">
-                {this.state.error?.message || 'An unexpected error occurred'}
-              </p>
-              <button
-                onClick={this.handleRetry}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-              >
-                Try again
-              </button>
-            </div>
+            <h2 className="text-2xl font-bold text-red-600 mb-4">
+              Something went wrong
+            </h2>
+            <p className="text-gray-600 mb-4">
+              We apologize for the inconvenience. Please try refreshing the page or contact support if the problem persists.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+            >
+              Refresh Page
+            </button>
           </div>
         </div>
       );
