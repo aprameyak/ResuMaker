@@ -6,22 +6,27 @@ interface FormErrors {
   [key: string]: string;
 }
 
-export default function ResumeForm({ onSubmit }: { onSubmit: (data: FormData) => void }) {
+interface ResumeFormProps {
+  onSubmit: (data: FormData) => void;
+  initialData?: FormData | null;
+}
+
+export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<FormData>(initialData || {
     personalInfo: {
       fullName: '',
       title: '',
       email: '',
       phone: '',
       location: '',
-      portfolio: '',
       linkedin: '',
-      github: ''
+      github: '',
+      portfolio: ''
     },
-    experience: [],
     education: [],
+    experience: [],
     projects: [],
     skills: {
       technical: [],
