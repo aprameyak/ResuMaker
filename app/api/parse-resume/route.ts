@@ -12,6 +12,14 @@ const TEMP_DIR = '/tmp/resumaker-uploads';
 
 export async function POST(request: Request) {
   try {
+    // Validate request
+    if (!request.body) {
+      return NextResponse.json(
+        { error: 'Request body is required' },
+        { status: 400 }
+      );
+    }
+
     const data = await request.formData();
     const file: File | null = data.get('file') as unknown as File;
 
@@ -22,38 +30,107 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate file type
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: 'Unsupported file format. Please upload a PDF, DOC, DOCX, or TXT file.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (10MB limit)
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json(
+        { error: 'File size exceeds 10MB limit' },
+        { status: 400 }
+      );
+    }
+
     // Create upload directory if it doesn't exist
     const uploadDir = './uploads';
-    await mkdir(uploadDir, { recursive: true });
+    try {
+      await mkdir(uploadDir, { recursive: true });
+    } catch (error) {
+      console.error('Error creating upload directory:', error);
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
 
     // Generate unique filename
     const filename = `${Date.now()}-${file.name}`;
     const filepath = `${uploadDir}/${filename}`;
 
-    // Convert File to Buffer and write to filesystem
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    try {
+      // Convert File to Buffer and write to filesystem
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filepath, buffer);
+    } catch (error) {
+      console.error('Error writing file:', error);
+      return NextResponse.json(
+        { error: 'Failed to process uploaded file' },
+        { status: 500 }
+      );
+    }
 
     // Parse resume based on file type
     let parsedData: Partial<FormData>;
-    
-    if (file.name.toLowerCase().endsWith('.pdf')) {
-      parsedData = await parsePdfResume(filepath);
-    } else if (file.name.toLowerCase().endsWith('.docx')) {
-      parsedData = await parseDocxResume(filepath);
-    } else {
-      throw new Error('Unsupported file format');
+    try {
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        parsedData = await parsePdfResume(filepath);
+      } else if (file.name.toLowerCase().endsWith('.docx')) {
+        parsedData = await parseDocxResume(filepath);
+      } else {
+        throw new Error('Unsupported file format');
+      }
+    } catch (error) {
+      console.error('Error parsing resume:', error);
+      // Clean up file
+      try {
+        await fs.unlink(filepath);
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
+      }
+      return NextResponse.json(
+        { error: 'Failed to parse resume content' },
+        { status: 500 }
+      );
     }
 
     // Clean up uploaded file
-    await fs.unlink(filepath);
+    try {
+      await fs.unlink(filepath);
+    } catch (error) {
+      console.error('Error cleaning up file:', error);
+      // Don't fail the request if cleanup fails
+    }
+
+    // Validate parsed data
+    if (!parsedData || Object.keys(parsedData).length === 0) {
+      return NextResponse.json(
+        { error: 'Failed to extract content from resume' },
+        { status: 422 }
+      );
+    }
 
     return NextResponse.json(parsedData);
   } catch (error) {
     console.error('Error processing resume:', error);
     return NextResponse.json(
-      { error: 'Failed to process resume' },
+      { 
+        error: 'Failed to process resume',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
@@ -275,13 +352,107 @@ function extractEducationSection(text: string): ExtractedSections['education'] {
 }
 
 function extractExperienceSection(text: string): ExtractedSections['experience'] {
-  // Implement experience section extraction logic
-  return [];
+  const experience: ExtractedSections['experience'] = [];
+  const experienceRegex = /(?:Experience|Work Experience|Professional Experience)(?:\n|:)(.*?)(?:Education|Skills|Projects|$)/is;
+  const match = text.match(experienceRegex);
+  
+  if (match) {
+    const experienceText = match[1];
+    const entries = experienceText.split(/\n\n+/);
+    
+    for (const entry of entries) {
+      if (!entry.trim()) continue;
+      
+      const lines = entry.split('\n');
+      const titleCompanyMatch = lines[0]?.match(/(?:(.+?)(?:\s+at\s+|\s*[-|]\s*)(.+))|(.+)/);
+      const dateMatch = entry.match(/(\w+ \d{4})\s*(?:-|to)\s*(\w+ \d{4}|Present)/i);
+      const locationMatch = entry.match(/([A-Z][a-zA-Z\s]+,\s*[A-Z]{2})/);
+      
+      // Extract achievements/bullet points
+      const achievements = lines
+        .slice(1)
+        .filter(line => line.trim().startsWith('•') || line.trim().startsWith('-'))
+        .map(line => line.trim().replace(/^[•-]\s*/, ''));
+      
+      // Extract description (non-bullet point text)
+      const description = lines
+        .slice(1)
+        .filter(line => !line.trim().startsWith('•') && !line.trim().startsWith('-'))
+        .join('\n')
+        .trim();
+      
+      if (titleCompanyMatch) {
+        experience.push({
+          company: titleCompanyMatch[2] || '',
+          title: titleCompanyMatch[1] || titleCompanyMatch[3] || '',
+          startDate: dateMatch ? dateMatch[1] : '',
+          endDate: dateMatch ? dateMatch[2] : '',
+          description: description,
+          location: locationMatch ? locationMatch[1] : '',
+          achievements: achievements
+        });
+      }
+    }
+  }
+  
+  return experience;
 }
 
 function extractProjectsSection(text: string): ExtractedSections['projects'] {
-  // Implement projects section extraction logic
-  return [];
+  const projects: ExtractedSections['projects'] = [];
+  const projectsRegex = /(?:Projects|Personal Projects|Technical Projects)(?:\n|:)(.*?)(?:Experience|Education|Skills|$)/is;
+  const match = text.match(projectsRegex);
+  
+  if (match) {
+    const projectsText = match[1];
+    const entries = projectsText.split(/\n\n+/);
+    
+    for (const entry of entries) {
+      if (!entry.trim()) continue;
+      
+      const lines = entry.split('\n');
+      const nameMatch = lines[0]?.match(/(.+?)(?:\s*[-|]\s*|$)/);
+      const dateMatch = entry.match(/(\w+ \d{4})\s*(?:-|to)\s*(\w+ \d{4}|Present)/i);
+      const linkMatch = entry.match(/(?:Link|URL|GitHub):\s*(https?:\/\/[^\s\n]+)/i);
+      
+      // Extract technologies
+      const techMatch = entry.match(/(?:Technologies|Tech Stack|Built with):\s*([^\n]+)/i);
+      const technologies = techMatch 
+        ? techMatch[1].split(/[,|]/).map(tech => tech.trim()).filter(Boolean)
+        : [];
+      
+      // Extract achievements/bullet points
+      const achievements = lines
+        .slice(1)
+        .filter(line => line.trim().startsWith('•') || line.trim().startsWith('-'))
+        .map(line => line.trim().replace(/^[•-]\s*/, ''));
+      
+      // Extract description (non-bullet point text)
+      const description = lines
+        .slice(1)
+        .filter(line => 
+          !line.trim().startsWith('•') && 
+          !line.trim().startsWith('-') &&
+          !line.match(/(?:Technologies|Tech Stack|Built with|Link|URL|GitHub):/i)
+        )
+        .join('\n')
+        .trim();
+      
+      if (nameMatch) {
+        projects.push({
+          name: nameMatch[1].trim(),
+          description: description,
+          technologies: technologies,
+          startDate: dateMatch ? dateMatch[1] : '',
+          endDate: dateMatch ? dateMatch[2] : '',
+          link: linkMatch ? linkMatch[1] : '',
+          achievements: achievements
+        });
+      }
+    }
+  }
+  
+  return projects;
 }
 
 function extractTechnicalSkills(text: string): string[] {
