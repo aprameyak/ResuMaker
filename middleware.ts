@@ -1,21 +1,9 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { authMiddleware } from "@clerk/nextjs";
 
-export function middleware(request: NextRequest) {
-  const ip = request.headers.get('x-real-ip') || 
-             request.headers.get('x-forwarded-for')?.split(',')[0] || 
-             'anonymous';
-
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-real-ip', ip);
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
-}
+export default authMiddleware({
+  publicRoutes: ["/"],
+});
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 }; 

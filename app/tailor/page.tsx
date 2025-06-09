@@ -21,7 +21,6 @@ export default function TailorPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="section container-narrow">
-        {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">
             <span className="gradient-text">Tailor Your Resume</span>
@@ -31,9 +30,7 @@ export default function TailorPage() {
           </p>
         </div>
 
-        {/* Main Content */}
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Job Description Analysis */}
           <div className="card p-6 transition-all">
             <div className="flex items-center gap-4 mb-6">
               <div className="feature-icon">
@@ -59,9 +56,7 @@ export default function TailorPage() {
             </button>
           </div>
 
-          {/* Resume Upload/Select */}
           <div className="space-y-6">
-            {/* Upload Resume */}
             <div className="card p-6 transition-all">
               <div className="flex items-center gap-4 mb-4">
                 <div className="feature-icon">
@@ -72,12 +67,9 @@ export default function TailorPage() {
                   <p className="text-gray-600">Upload an existing resume to tailor</p>
                 </div>
               </div>
-              <button className="btn-secondary w-full">
-                Choose File
-              </button>
+              <button className="btn-secondary w-full">Choose File</button>
             </div>
 
-            {/* Select from Saved */}
             <div className="card p-6 transition-all">
               <div className="flex items-center gap-4 mb-4">
                 <div className="feature-icon">
@@ -97,10 +89,7 @@ export default function TailorPage() {
           </div>
         </div>
 
-        {/* Results Section - Initially Hidden */}
-        <div 
-          className={`mt-12 card p-6 transition-all ${showResults ? 'opacity-100' : 'opacity-0 hidden'}`}
-        >
+        <div className={`mt-12 card p-6 transition-all ${showResults ? 'opacity-100' : 'opacity-0 hidden'}`}>
           <h3 className="text-xl font-semibold mb-4">Analysis Results</h3>
           <div className="space-y-4">
             <div className="p-4 bg-gray-50 rounded-lg">
