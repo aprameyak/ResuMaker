@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { rateLimit } from '@/lib/rate-limit';
+import { rateLimit } from '@/app/lib/rate-limit';
 import { z } from 'zod';
 import { AIFeedback, APIResponse } from '@/app/types';
 
