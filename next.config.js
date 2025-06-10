@@ -26,38 +26,11 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
-          },
-        ],
-      },
-      {
         source: '/(.*)',
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://clerk.com",
-              "connect-src 'self' https://*.clerk.com https://clerk.com",
-              "frame-src 'self' https://*.clerk.com https://clerk.com",
-              "img-src 'self' data: https://*.clerk.com https://clerk.com",
-              "style-src 'self' 'unsafe-inline'",
-              "worker-src 'self' blob:",
-              "font-src 'self' https://fonts.gstatic.com",
-              "manifest-src 'self'"
-            ].join('; ')
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.dev; connect-src 'self' https://*.clerk.com https://*.clerk.dev; frame-src 'self' https://*.clerk.com https://*.clerk.dev; img-src 'self' data: https://*.clerk.com https://*.clerk.dev; style-src 'self' 'unsafe-inline';"
           }
         ]
       }
