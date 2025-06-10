@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import ResumeEditor from '../components/ResumeEditor';
+import ResumeTemplates from '../components/ResumeTemplates';
 import { SECTION_TYPES } from '../constants';
+import { FiHelpCircle } from 'react-icons/fi';
 
 export default function CreatePage() {
   const router = useRouter();
   const { userId, isLoaded } = useAuth();
+  const [showTemplates, setShowTemplates] = useState(true);
   const [sections, setSections] = useState([
     {
       id: '1',
@@ -17,12 +20,18 @@ export default function CreatePage() {
       content: ''
     }
   ]);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (isLoaded && !userId) {
       router.push('/sign-in');
     }
   }, [isLoaded, userId, router]);
+
+  const handleSelectTemplate = (templateSections) => {
+    setSections(templateSections);
+    setShowTemplates(false);
+  };
 
   const handleUpdate = (section, content) => {
     setSections(sections.map(s => 
@@ -51,13 +60,58 @@ export default function CreatePage() {
   return (
     <div className="flex flex-col items-center py-8">
       <div className="w-full max-w-5xl">
-        <h1 className="text-4xl font-bold mb-8">Create Your Resume</h1>
-        <ResumeEditor 
-          sections={sections}
-          onUpdate={handleUpdate}
-          onAdd={handleAdd}
-          onDelete={handleDelete}
-        />
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold">Create Your Resume</h1>
+          <button 
+            onClick={() => setShowHelp(!showHelp)}
+            className="flex items-center text-blue-600 hover:text-blue-800"
+          >
+            <FiHelpCircle className="mr-1" /> Help
+          </button>
+        </div>
+
+        {showHelp && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-blue-800 mb-2">Tips for a Great Resume</h3>
+            <ul className="list-disc pl-5 text-blue-700 text-sm space-y-1">
+              <li>Keep your resume concise and relevant - one to two pages maximum</li>
+              <li>Quantify achievements with numbers when possible (e.g., "Increased sales by 25%")</li>
+              <li>Tailor your resume for each job application by matching keywords from the job description</li>
+              <li>Use action verbs to describe your responsibilities and achievements</li>
+              <li>Proofread carefully for spelling and grammar errors</li>
+            </ul>
+          </div>
+        )}
+
+        {showTemplates ? (
+          <ResumeTemplates onSelectTemplate={handleSelectTemplate} />
+        ) : (
+          <>
+            <p className="text-gray-600 mb-6">
+              Build your resume by adding or editing sections below. You can preview and export when ready.
+            </p>
+            <ResumeEditor 
+              sections={sections}
+              onUpdate={handleUpdate}
+              onAdd={handleAdd}
+              onDelete={handleDelete}
+            />
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={() => setShowTemplates(true)}
+                className="px-4 py-2 text-blue-600 hover:underline mr-4"
+              >
+                Back to Templates
+              </button>
+              <button
+                onClick={() => router.push('/preview')}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+              >
+                Preview & Export
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

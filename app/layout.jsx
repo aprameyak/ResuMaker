@@ -12,7 +12,15 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider 
+      appearance={{
+        elements: {
+          formButtonPrimary: 'bg-blue-600 hover:bg-blue-700 text-sm normal-case',
+          footerAction: 'text-blue-600',
+          card: 'rounded-md shadow-md',
+        }
+      }}
+    >
       <html lang="en" suppressHydrationWarning>
         <body className={inter.className} suppressHydrationWarning>
           <Navigation />
