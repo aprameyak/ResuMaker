@@ -27,7 +27,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<APIRespon
   }
 
   try {
-    // Initialize rate limiter
+    // Only initialize rate limiter if Redis is configured
     const limiter = rateLimit({
       interval: 60 * 1000, // 1 minute
       uniqueTokenPerInterval: 500,
