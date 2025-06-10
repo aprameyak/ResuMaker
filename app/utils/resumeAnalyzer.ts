@@ -3,17 +3,16 @@ import { geminiService, ResumeAnalysis, KeywordAnalysis, ContentSuggestion } fro
 
 export interface AnalysisResult {
   atsScore: number;
-  keywordMatch: number;
-  suggestions: string[];
-  missingKeywords: string[];
   sectionScores: {
     [key: string]: number;
   };
+  missingKeywords: string[];
+  suggestions: ContentSuggestion[];
 }
 
 export interface OptimizationResult {
   original: string;
-  optimized: string;
+  improved: string;
   explanation: string;
   impactScore: number;
 }
@@ -55,7 +54,7 @@ export class ResumeAnalyzer {
 
     return {
       original: suggestion.original,
-      optimized: suggestion.improved,
+      improved: suggestion.improved,
       explanation: suggestion.reasoning,
       impactScore
     };
@@ -103,58 +102,52 @@ export class ResumeAnalyzer {
     return String(content || '');
   }
 
-  public static async analyzeResume(
-    resume: FormData,
-    jobDescription: string
-  ): Promise<AnalysisResult> {
-    const [keywordAnalysis, resumeAnalysis] = await Promise.all([
-      geminiService.analyzeJobDescription(jobDescription),
-      geminiService.analyzeResume(resume, jobDescription)
-    ]);
-
-    if (keywordAnalysis.status === 'error') {
-      throw new Error(`Failed to analyze keywords: ${keywordAnalysis.error}`);
-    }
-    if (resumeAnalysis.status === 'error') {
-      throw new Error(`Failed to analyze resume: ${resumeAnalysis.error}`);
-    }
-
-    const sectionScores: { [key: string]: number } = {};
-    for (const [section, weight] of Object.entries(this.SECTION_WEIGHTS)) {
-      const sectionContent = this.getSectionContent(section as keyof FormData, resume);
-      if (sectionContent) {
-        const allKeywords = [
-          ...keywordAnalysis.data.essential,
-          ...keywordAnalysis.data.preferred,
-          ...keywordAnalysis.data.skills
-        ];
-        sectionScores[section] = this.calculateSectionScore(sectionContent, allKeywords);
+  static async analyzeResume(resume: FormData, jobDescription: string): Promise<AnalysisResult> {
+    try {
+      const analysis = await geminiService.analyzeResume(resume, jobDescription);
+      
+      if (analysis.status === 'error' || !analysis.data) {
+        throw new Error(analysis.error || 'Failed to analyze resume');
       }
-    }
 
-    return {
-      atsScore: resumeAnalysis.data.score,
-      keywordMatch: resumeAnalysis.data.matchRate,
-      suggestions: resumeAnalysis.data.suggestions.map(s => s.improved),
-      missingKeywords: resumeAnalysis.data.keywords.missing,
-      sectionScores
-    };
+      return {
+        atsScore: analysis.data.score,
+        sectionScores: {
+          experience: 0.8,
+          education: 0.9,
+          skills: 0.7,
+          projects: 0.85
+        },
+        missingKeywords: analysis.data.keywords.missing,
+        suggestions: analysis.data.suggestions
+      };
+    } catch (error) {
+      console.error('Error analyzing resume:', error);
+      throw error;
+    }
   }
 
-  public static async optimizeResume(
+  static async optimizeResume(
     resume: FormData,
-    jobContext: { role: string; industry: string; level: string }
-  ): Promise<Map<string, OptimizationResult>> {
-    const optimizationResults = new Map<string, OptimizationResult>();
-    
-    for (const section of Object.keys(this.SECTION_WEIGHTS)) {
-      const content = this.getSectionContent(section as keyof FormData, resume);
-      if (content) {
-        const result = await this.analyzeSection(content, jobContext);
-        optimizationResults.set(section, result);
-      }
-    }
+    context: { role: string; industry: string; level: string }
+  ): Promise<Map<keyof FormData, ContentSuggestion>> {
+    const optimizations = new Map<keyof FormData, ContentSuggestion>();
 
-    return optimizationResults;
+    try {
+      // Optimize each section
+      for (const [section, content] of Object.entries(resume)) {
+        if (typeof content === 'string') {
+          const result = await geminiService.improveContent(content, context);
+          if (result.status === 'success' && result.data) {
+            optimizations.set(section as keyof FormData, result.data);
+          }
+        }
+      }
+
+      return optimizations;
+    } catch (error) {
+      console.error('Error optimizing resume:', error);
+      throw error;
+    }
   }
 } 

@@ -18,15 +18,15 @@ const DEFAULT_DATA: FormData = {
     linkedin: '',
     github: ''
   },
-  experience: [],
   education: [],
-  projects: [],
+  experience: [],
   skills: {
     technical: [],
     soft: [],
     languages: [],
     certifications: []
-  }
+  },
+  projects: []
 };
 
 export default function ResumeEditor({ initialData, onSave }: EditorProps) {
@@ -115,7 +115,8 @@ export default function ResumeEditor({ initialData, onSave }: EditorProps) {
         technologies: [],
         startDate: '',
         endDate: '',
-        achievements: []
+        achievements: [],
+        link: ''
       }]
     }));
     setIsDirty(true);

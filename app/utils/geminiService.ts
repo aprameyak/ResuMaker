@@ -30,7 +30,7 @@ export interface ResumeAnalysis {
   suggestions: ContentSuggestion[];
 }
 
-class GeminiService {
+export class GeminiService {
   private model: GenerativeModel;
   private config: GenerationConfig;
 
@@ -43,6 +43,14 @@ class GeminiService {
       topP: 0.95,
       maxOutputTokens: 1024,
     };
+  }
+
+  async generateContent(prompt: string): Promise<string> {
+    const result = await this.model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: this.config,
+    });
+    return result.response.text();
   }
 
   private async generateStructuredResponse<T>(
@@ -239,4 +247,33 @@ Focus on:
   }
 }
 
-export const geminiService = new GeminiService(); 
+// Create a singleton instance
+export const geminiService = new GeminiService();
+
+export const generateResumeContent = async (data: FormData): Promise<GeminiResponse<string>> => {
+  try {
+    const prompt = `
+Generate professional resume content based on the following information:
+${JSON.stringify(data, null, 2)}
+
+Guidelines:
+- Use clear, concise language
+- Focus on achievements and impact
+- Use strong action verbs
+- Include relevant keywords
+- Maintain professional tone
+- Format for ATS compatibility`;
+
+    const text = await geminiService.generateContent(prompt);
+    return {
+      data: text,
+      status: 'success'
+    };
+  } catch (error) {
+    return {
+      data: '',
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+}; 

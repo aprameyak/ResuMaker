@@ -16,11 +16,17 @@ const nextConfig = {
   images: {
     domains: ['fonts.gstatic.com'],
     unoptimized: false,
+    minimumCacheTTL: 60,
+    formats: ['image/webp'],
   },
   experimental: {
-    optimizeCss: false,
+    optimizeCss: true,
+    scrollRestoration: true,
   },
   optimizeFonts: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
   webpack(config) {
     config.module.rules.push({
       test: /\.(woff|woff2|eot|ttf|otf)$/,

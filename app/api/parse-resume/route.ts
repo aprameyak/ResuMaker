@@ -138,24 +138,24 @@ export async function POST(request: Request) {
 
 function transformToFormData(parsedData: any): Partial<FormData> {
   const personalInfo: Partial<PersonalInfo> = {
-    fullName: parsedData.personalInfo?.name || '',
-    title: '', // Will need to be inferred or manually added
+    fullName: parsedData.personalInfo?.fullName || '',
+    title: parsedData.personalInfo?.title || '',
     email: parsedData.personalInfo?.email || '',
     phone: parsedData.personalInfo?.phone || '',
     location: parsedData.personalInfo?.location || '',
+    portfolio: parsedData.personalInfo?.links?.portfolio || '',
     linkedin: parsedData.personalInfo?.links?.linkedin || '',
-    github: parsedData.personalInfo?.links?.github || '',
-    portfolio: parsedData.personalInfo?.links?.portfolio || ''
+    github: parsedData.personalInfo?.links?.github || ''
   };
 
   const education: Partial<Education>[] = (parsedData.education || []).map((edu: any) => ({
     institution: edu.school || '',
     degree: edu.degree || '',
-    field: '', // Will need to be inferred or manually added
-    startDate: '', // Will need to be parsed from graduationDate
-    endDate: edu.graduationDate || '',
+    field: edu.field || '',
+    startDate: edu.startDate || '',
+    endDate: edu.endDate || edu.graduationDate || '',
     location: edu.location || '',
-    achievements: []
+    achievements: edu.achievements || []
   }));
 
   const experience: Partial<Experience>[] = (parsedData.experience || []).map((exp: any) => ({
@@ -174,8 +174,8 @@ function transformToFormData(parsedData: any): Partial<FormData> {
     technologies: proj.technologies || [],
     startDate: proj.startDate || '',
     endDate: proj.endDate || '',
-    link: proj.link || '',
-    achievements: proj.achievements || []
+    achievements: proj.achievements || [],
+    link: proj.link || ''
   }));
 
   const skills: Partial<Skills> = {
@@ -189,8 +189,8 @@ function transformToFormData(parsedData: any): Partial<FormData> {
     personalInfo: personalInfo as PersonalInfo,
     education: education as Education[],
     experience: experience as Experience[],
-    projects: projects as Project[],
-    skills: skills as Skills
+    skills: skills as Skills,
+    projects: projects as Project[]
   };
 }
 

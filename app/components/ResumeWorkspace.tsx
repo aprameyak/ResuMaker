@@ -14,12 +14,14 @@ import type {
 } from '../types';
 import { ResumeParser } from './ResumeParser';
 import { ResumeAnalyzer } from '../utils/resumeAnalyzer';
-import { geminiService } from '../utils/geminiService';
+import { GeminiService } from '../utils/geminiService';
 
 interface ResumeWorkspaceProps {
   initialData?: FormData;
   templates: ResumeTemplate[];
   onSave?: (data: FormData) => Promise<void>;
+  onAnalyze?: (score: ATSScore) => void;
+  onJobMatch?: (matches: JobMatch[]) => void;
 }
 
 const DEFAULT_PERSONAL_INFO: PersonalInfo = {
@@ -41,30 +43,48 @@ const DEFAULT_SKILLS: Skills = {
 };
 
 const DEFAULT_FORM_DATA: FormData = {
-  personalInfo: DEFAULT_PERSONAL_INFO,
-  experience: [],
+  personalInfo: {
+    fullName: '',
+    title: '',
+    email: '',
+    phone: '',
+    location: '',
+    linkedin: '',
+    github: '',
+    portfolio: ''
+  },
   education: [],
-  projects: [],
-  skills: DEFAULT_SKILLS
+  experience: [],
+  skills: {
+    technical: [],
+    soft: [],
+    languages: [],
+    certifications: []
+  },
+  projects: []
 };
 
 export const ResumeWorkspace: React.FC<ResumeWorkspaceProps> = ({
   initialData,
   templates,
-  onSave
+  onSave,
+  onAnalyze,
+  onJobMatch
 }) => {
-  const [formData, setFormData] = useState<FormData>(initialData || DEFAULT_FORM_DATA);
-  const [editorState, setEditorState] = useState<EditorState>({
+  const [formData, setFormData] = useState<FormData>(() => initialData || DEFAULT_FORM_DATA);
+  const [editorState, setEditorState] = useState<EditorState>(() => ({
     mode: 'edit',
     isDirty: false
-  });
-  const [analysisState, setAnalysisState] = useState<AnalysisState>({
-    isAnalyzing: false
-  });
-  const [saveState, setSaveState] = useState<SaveState>({
+  }));
+  const [analysisState, setAnalysisState] = useState<AnalysisState>(() => ({
+    isAnalyzing: false,
+    error: undefined
+  }));
+  const [saveState, setSaveState] = useState<SaveState>(() => ({
     lastSaved: null,
-    isSaving: false
-  });
+    isSaving: false,
+    error: undefined
+  }));
   const [jobDescription, setJobDescription] = useState<string>('');
 
   const handleFormChange = useCallback((
@@ -117,19 +137,26 @@ export const ResumeWorkspace: React.FC<ResumeWorkspaceProps> = ({
     try {
       const result = await ResumeAnalyzer.analyzeResume(formData, jobDescription);
       
+      const atsScore: ATSScore = {
+        overall: result.atsScore,
+        sections: result.sectionScores,
+        keywords: {
+          matched: [],
+          missing: result.missingKeywords
+        },
+        suggestions: result.suggestions.map(s => s.improved)
+      };
+
       setAnalysisState(prev => ({
         ...prev,
-        atsScore: {
-          overall: result.atsScore,
-          sections: result.sectionScores,
-          keywords: {
-            matched: [],
-            missing: result.missingKeywords
-          },
-          suggestions: result.suggestions
-        },
-        isAnalyzing: false
+        isAnalyzing: false,
+        atsScore,
+        error: undefined
       }));
+
+      if (onAnalyze) {
+        onAnalyze(atsScore);
+      }
     } catch (error) {
       setAnalysisState(prev => ({
         ...prev,
@@ -137,7 +164,7 @@ export const ResumeWorkspace: React.FC<ResumeWorkspaceProps> = ({
         error: error instanceof Error ? error.message : 'Failed to analyze resume'
       }));
     }
-  }, [formData, jobDescription]);
+  }, [formData, jobDescription, onAnalyze]);
 
   const optimizeResume = useCallback(async () => {
     if (!jobDescription) {
@@ -165,7 +192,7 @@ export const ResumeWorkspace: React.FC<ResumeWorkspaceProps> = ({
       for (const [section, result] of optimizationResults.entries()) {
         if (section in updatedFormData) {
           // Type assertion needed here as we know the section exists
-          (updatedFormData[section as keyof FormData] as any) = result.optimized;
+          (updatedFormData[section as keyof FormData] as any) = result.improved;
         }
       }
 
@@ -223,186 +250,111 @@ export const ResumeWorkspace: React.FC<ResumeWorkspaceProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center p-4 border-b">
-        <div className="flex space-x-4">
-          <button
-            onClick={() => handleModeChange('edit')}
-            className={`px-4 py-2 rounded-md ${
-              editorState.mode === 'edit' ? 'bg-blue-500 text-white' : 'bg-gray-100'
-            }`}
+      <div className="flex-1 overflow-auto">
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="p-6"
           >
-            Edit
-          </button>
-          <button
-            onClick={() => handleModeChange('preview')}
-            className={`px-4 py-2 rounded-md ${
-              editorState.mode === 'preview' ? 'bg-blue-500 text-white' : 'bg-gray-100'
-            }`}
-          >
-            Preview
-          </button>
-          <button
-            onClick={() => handleModeChange('analyze')}
-            className={`px-4 py-2 rounded-md ${
-              editorState.mode === 'analyze' ? 'bg-blue-500 text-white' : 'bg-gray-100'
-            }`}
-          >
-            Analyze
-          </button>
-        </div>
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold mb-6">Resume Builder</h2>
 
-        <div className="flex items-center space-x-4">
-          {saveState.lastSaved && (
-            <span className="text-sm text-gray-500">
-              Last saved: {saveState.lastSaved.toLocaleTimeString()}
-            </span>
-          )}
-          <button
-            onClick={saveResume}
-            disabled={saveState.isSaving || !editorState.isDirty}
-            className={`px-4 py-2 rounded-md ${
-              saveState.isSaving || !editorState.isDirty
-                ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-green-500 text-white hover:bg-green-600'
-            }`}
-          >
-            {saveState.isSaving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 p-4">
-        <AnimatePresence mode="wait">
-          {editorState.mode === 'edit' && (
-            <motion.div
-              key="edit"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="h-full"
-            >
-              {/* Form sections go here */}
-            </motion.div>
-          )}
-
-          {editorState.mode === 'preview' && (
-            <motion.div
-              key="preview"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="h-full"
-            >
-              {/* Preview component goes here */}
-            </motion.div>
-          )}
-
-          {editorState.mode === 'analyze' && (
-            <motion.div
-              key="analyze"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="h-full"
-            >
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <textarea
-                    value={jobDescription}
-                    onChange={(e) => handleJobDescriptionChange(e.target.value)}
-                    placeholder="Paste job description here..."
-                    className="w-full h-40 p-4 border rounded-md"
-                  />
-                  <div className="flex space-x-4">
-                    <button
-                      onClick={analyzeResume}
-                      disabled={analysisState.isAnalyzing}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                    >
-                      {analysisState.isAnalyzing ? 'Analyzing...' : 'Analyze'}
-                    </button>
-                    <button
-                      onClick={optimizeResume}
-                      disabled={analysisState.isAnalyzing}
-                      className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-                    >
-                      {analysisState.isAnalyzing ? 'Optimizing...' : 'Optimize'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {analysisState.error && (
-                    <div className="p-4 bg-red-100 text-red-700 rounded-md">
-                      {analysisState.error}
+                <div className="space-y-6">
+                  {/* Analysis Section */}
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold mb-4">ATS Analysis</h3>
+                    <div className="flex space-x-4">
+                      <button
+                        onClick={analyzeResume}
+                        disabled={analysisState.isAnalyzing}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                      >
+                        {analysisState.isAnalyzing ? 'Analyzing...' : 'Analyze'}
+                      </button>
+                      <button
+                        onClick={optimizeResume}
+                        disabled={analysisState.isAnalyzing}
+                        className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+                      >
+                        {analysisState.isAnalyzing ? 'Optimizing...' : 'Optimize'}
+                      </button>
                     </div>
-                  )}
 
-                  {analysisState.atsScore && (
-                    <div className="p-4 bg-white rounded-md shadow">
-                      <h3 className="text-lg font-semibold mb-4">ATS Analysis</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm text-gray-600">Overall Score</p>
-                          <div className="w-full h-2 bg-gray-200 rounded-full mt-1">
-                            <div
-                              className="h-full bg-blue-500 rounded-full"
-                              style={{ width: `${analysisState.atsScore.overall}%` }}
-                            />
-                          </div>
-                        </div>
+                    {analysisState.error && (
+                      <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
+                        {analysisState.error}
+                      </div>
+                    )}
 
-                        {Object.entries(analysisState.atsScore.sections).map(([section, score]) => (
-                          <div key={section}>
-                            <p className="text-sm text-gray-600">
-                              {section.charAt(0).toUpperCase() + section.slice(1)}
-                            </p>
-                            <div className="w-full h-2 bg-gray-200 rounded-full mt-1">
+                    {analysisState.atsScore && (
+                      <div className="p-4 bg-white rounded-md shadow">
+                        <h3 className="text-lg font-semibold mb-4">ATS Analysis</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">Overall Score</p>
+                            <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-green-500 rounded-full"
-                                style={{ width: `${score}%` }}
+                                className="h-full bg-blue-500 rounded-full"
+                                style={{ width: `${analysisState.atsScore.overall}%` }}
                               />
                             </div>
                           </div>
-                        ))}
 
-                        {analysisState.atsScore.keywords.missing.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">Missing Keywords</p>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {analysisState.atsScore.keywords.missing.map((keyword) => (
-                                <span
-                                  key={keyword}
-                                  className="px-2 py-1 bg-red-100 text-red-700 rounded text-sm"
-                                >
-                                  {keyword}
-                                </span>
-                              ))}
+                          {Object.entries(analysisState.atsScore.sections).map(([section, score]) => (
+                            <div key={section}>
+                              <p className="text-sm text-gray-600">
+                                {section.charAt(0).toUpperCase() + section.slice(1)}
+                              </p>
+                              <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-green-500 rounded-full"
+                                  style={{ width: `${score}%` }}
+                                />
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          ))}
 
-                        {analysisState.atsScore.suggestions.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">Suggestions</p>
-                            <ul className="mt-2 space-y-2">
-                              {analysisState.atsScore.suggestions.map((suggestion, index) => (
-                                <li key={index} className="text-sm text-gray-600">
-                                  • {suggestion}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                          {analysisState.atsScore.keywords.missing.length > 0 && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">Missing Keywords</p>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {analysisState.atsScore.keywords.missing.map((keyword) => (
+                                  <span
+                                    key={keyword}
+                                    className="px-2 py-1 bg-red-100 text-red-700 rounded text-sm"
+                                  >
+                                    {keyword}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {analysisState.atsScore.suggestions.length > 0 && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">Suggestions</p>
+                              <ul className="mt-2 space-y-2">
+                                {analysisState.atsScore.suggestions.map((suggestion, index) => (
+                                  <li key={index} className="text-sm text-gray-600">
+                                    • {suggestion}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
-            </motion.div>
-          )}
+            </div>
+          </motion.div>
         </AnimatePresence>
       </div>
     </div>
   );
-}; 
+};

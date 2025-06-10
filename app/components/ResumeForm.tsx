@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AIResumeEditor from './AIResumeEditor';
-import { FormData } from '@/app/types';
+import { FormData, ResumeSection, ResumeSectionType } from '@/app/types';
 
 interface FormErrors {
   [key: string]: string;
@@ -231,6 +231,18 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
       }
     }));
   };
+
+  const createResumeSection = (
+    id: string,
+    title: string,
+    content: string,
+    type: ResumeSectionType
+  ): ResumeSection => ({
+    id,
+    title,
+    content,
+    type
+  });
 
   const styles = {
     form: {
@@ -521,7 +533,7 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
           {errors.experience && <div style={styles.sectionError}>{errors.experience}</div>}
           
           {formData.experience.map((exp, index) => (
-            <div key={index} style={styles.experienceItem}>
+            <div key={index} className="mb-4">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3>Experience {index + 1}</h3>
                 {formData.experience.length > 1 && (
@@ -594,17 +606,23 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
               </div>
               {errors[`experience_${index}_endDate`] && <div style={styles.error}>{errors[`experience_${index}_endDate`]}</div>}
 
-              <AIResumeEditor
-                section="experience"
-                content={exp.description}
-                onUpdate={(newContent) => {
-                  const newExp = [...formData.experience];
-                  newExp[index] = { ...exp, description: newContent };
-                  setFormData({ ...formData, experience: newExp });
-                }}
-                data-error={!!errors[`experience_${index}_description`]}
-              />
-              {errors[`experience_${index}_description`] && <div style={styles.error}>{errors[`experience_${index}_description`]}</div>}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <AIResumeEditor
+                  section={{
+                    id: `experience-${index}`,
+                    title: 'Experience Description',
+                    content: exp.description,
+                    type: 'experience'
+                  }}
+                  content={exp.description}
+                  onUpdate={(newContent) => {
+                    const newExp = [...formData.experience];
+                    newExp[index] = { ...newExp[index], description: newContent };
+                    setFormData({ ...formData, experience: newExp });
+                  }}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -744,20 +762,97 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
           </div>
           {errors.technicalSkills && <div style={styles.sectionError}>{errors.technicalSkills}</div>}
           
-          <AIResumeEditor
-            section="skills"
-            content={formData.skills.technical.join(', ')}
-            onUpdate={(newContent) => {
-              setErrors((prev) => ({ ...prev, technicalSkills: '' }));
-              setFormData({
-                ...formData,
-                skills: {
-                  ...formData.skills,
-                  technical: newContent.split(',').map(skill => skill.trim()).filter(Boolean)
-                }
-              });
-            }}
-          />
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Technical Skills</label>
+            <AIResumeEditor
+              section={{
+                id: 'technical-skills',
+                title: 'Technical Skills',
+                content: formData.skills.technical.join(', '),
+                type: 'skills'
+              }}
+              content={formData.skills.technical.join(', ')}
+              onUpdate={(newContent) => {
+                setErrors((prev) => ({ ...prev, technicalSkills: '' }));
+                setFormData((prev) => ({
+                  ...prev,
+                  skills: {
+                    ...prev.skills,
+                    technical: newContent.split(',').map(skill => skill.trim()).filter(Boolean)
+                  }
+                }));
+              }}
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Soft Skills</label>
+            <AIResumeEditor
+              section={{
+                id: 'soft-skills',
+                title: 'Soft Skills',
+                content: formData.skills.soft.join(', '),
+                type: 'skills'
+              }}
+              content={formData.skills.soft.join(', ')}
+              onUpdate={(newContent) => {
+                setErrors((prev) => ({ ...prev, softSkills: '' }));
+                setFormData((prev) => ({
+                  ...prev,
+                  skills: {
+                    ...prev.skills,
+                    soft: newContent.split(',').map(skill => skill.trim()).filter(Boolean)
+                  }
+                }));
+              }}
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Languages</label>
+            <AIResumeEditor
+              section={{
+                id: 'languages',
+                title: 'Languages',
+                content: formData.skills.languages.join(', '),
+                type: 'skills'
+              }}
+              content={formData.skills.languages.join(', ')}
+              onUpdate={(newContent) => {
+                setErrors((prev) => ({ ...prev, languages: '' }));
+                setFormData((prev) => ({
+                  ...prev,
+                  skills: {
+                    ...prev.skills,
+                    languages: newContent.split(',').map(lang => lang.trim()).filter(Boolean)
+                  }
+                }));
+              }}
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Certifications</label>
+            <AIResumeEditor
+              section={{
+                id: 'certifications',
+                title: 'Certifications',
+                content: formData.skills.certifications.join(', '),
+                type: 'skills'
+              }}
+              content={formData.skills.certifications.join(', ')}
+              onUpdate={(newContent) => {
+                setErrors((prev) => ({ ...prev, certifications: '' }));
+                setFormData((prev) => ({
+                  ...prev,
+                  skills: {
+                    ...prev.skills,
+                    certifications: newContent.split(',').map(cert => cert.trim()).filter(Boolean)
+                  }
+                }));
+              }}
+            />
+          </div>
         </div>
 
         <button

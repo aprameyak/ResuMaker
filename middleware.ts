@@ -6,26 +6,30 @@ export default authMiddleware({
     "/",
     "/sign-in(.*)",
     "/sign-up(.*)",
-    "/api(.*)",
-    "/_next(.*)",
-    "/fonts(.*)",
-    "/images(.*)",
-    "/favicon.ico",
-    "/sitemap.xml",
-    "/robots.txt"
+    "/api/parse-resume",  // Public API endpoint
+    "/_next(.*)",        // Next.js assets
+    "/fonts(.*)",        // Font assets
+    "/images(.*)",       // Image assets
+    "/favicon.ico",      // Favicon
+    "/sitemap.xml",      // SEO
+    "/robots.txt"        // SEO
   ],
   
-  // Ignore specific routes completely
+  // Ignore specific routes completely (no auth check)
   ignoredRoutes: [
-    "/api/parse-resume",
-    "/api/analyze-content",
-    "/api/generate",
-    "/api/latex"
+    "/api/health",       // Health check endpoint
+    "/api/webhooks(.*)"  // Webhook endpoints
   ],
 
-  debug: true // Enable debug mode to get more information about middleware failures
+  // Disable debug mode in production
+  debug: process.env.NODE_ENV === "development"
 });
 
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    // Match all routes except static files and Next.js internals
+    "/((?!.+\\.[\\w]+$|_next).*)",
+    "/",
+    "/(api|trpc)(.*)"
+  ]
 }; 

@@ -11,7 +11,9 @@
     "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
     "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
     "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/",
-    "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/"
+    "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/",
+    "RATE_LIMIT_REQUESTS": "10",
+    "RATE_LIMIT_INTERVAL": "60000"
   },
   "headers": [
     {
@@ -28,8 +30,38 @@
         {
           "key": "X-XSS-Protection",
           "value": "1; mode=block"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' clerk.*.com *.clerk.com; connect-src 'self' clerk.*.com *.clerk.com vitals.vercel-insights.com; img-src 'self' data: clerk.*.com *.clerk.com; style-src 'self' 'unsafe-inline'; frame-src clerk.*.com *.clerk.com; font-src 'self' fonts.gstatic.com;"
         }
       ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/api/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "x-forwarded-proto",
+          "value": "(?!https)"
+        }
+      ],
+      "permanent": false,
+      "destination": "https://${VERCEL_URL}/api/:path*"
     }
   ]
 } 
