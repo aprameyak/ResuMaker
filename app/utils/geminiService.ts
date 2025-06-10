@@ -2,8 +2,8 @@ import { GoogleGenerativeAI, GenerativeModel, GenerationConfig } from '@google/g
 import { FormData } from '@/app/types';
 
 export interface GeminiResponse<T> {
-  data: T;
   status: 'success' | 'error';
+  data?: T;
   error?: string;
 }
 
@@ -35,7 +35,7 @@ export class GeminiService {
   private config: GenerationConfig;
 
   constructor() {
-    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
     this.model = genAI.getGenerativeModel({ model: 'gemini-pro' });
     this.config = {
       temperature: 0.7,
@@ -53,27 +53,33 @@ export class GeminiService {
     return result.response.text();
   }
 
-  private async generateStructuredResponse<T>(
-    prompt: string,
-    schema: Record<string, any>
-  ): Promise<GeminiResponse<T>> {
+  async generateStructuredResponse<T>(prompt: string, schema: any): Promise<GeminiResponse<T>> {
     try {
       const result = await this.model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: this.config,
       });
 
-      const response = result.response;
-      const text = response.text();
+      const text = result.response.text();
+      let data: T;
+
+      try {
+        data = JSON.parse(text);
+      } catch (error) {
+        return {
+          status: 'error',
+          error: 'Failed to parse AI response as JSON'
+        };
+      }
+
       return {
-        data: JSON.parse(text) as T,
-        status: 'success'
+        status: 'success',
+        data
       };
     } catch (error) {
       return {
-        data: {} as T,
         status: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Failed to generate response'
       };
     }
   }
@@ -244,6 +250,70 @@ Focus on:
       improved: 'string',
       reasoning: 'string'
     });
+  }
+
+  async generateResumeContent(formData: FormData): Promise<GeminiResponse<string>> {
+    try {
+      const prompt = `
+Generate a professional resume content based on the following information:
+
+Personal Information:
+- Name: ${formData.personalInfo.fullName}
+- Title: ${formData.personalInfo.title}
+- Contact: ${formData.personalInfo.email} | ${formData.personalInfo.phone}
+- Location: ${formData.personalInfo.location}
+${formData.personalInfo.linkedin ? `- LinkedIn: ${formData.personalInfo.linkedin}` : ''}
+${formData.personalInfo.github ? `- GitHub: ${formData.personalInfo.github}` : ''}
+${formData.personalInfo.portfolio ? `- Portfolio: ${formData.personalInfo.portfolio}` : ''}
+
+Education:
+${formData.education.map(edu => `
+- ${edu.degree} in ${edu.field}
+  ${edu.institution}, ${edu.location}
+  ${edu.startDate} - ${edu.endDate}
+  ${edu.achievements.length > 0 ? `Achievements:\n${edu.achievements.map(a => `  - ${a}`).join('\n')}` : ''}`).join('\n')}
+
+Experience:
+${formData.experience.map(exp => `
+- ${exp.position}
+  ${exp.company}, ${exp.location}
+  ${exp.startDate} - ${exp.endDate}
+  ${exp.description}
+  ${exp.achievements.length > 0 ? `Achievements:\n${exp.achievements.map(a => `  - ${a}`).join('\n')}` : ''}`).join('\n')}
+
+Skills:
+- Technical: ${formData.skills.technical.join(', ')}
+- Soft Skills: ${formData.skills.soft.join(', ')}
+${formData.skills.languages.length > 0 ? `- Languages: ${formData.skills.languages.join(', ')}` : ''}
+${formData.skills.certifications.length > 0 ? `- Certifications: ${formData.skills.certifications.join(', ')}` : ''}
+
+Projects:
+${formData.projects.map(proj => `
+- ${proj.name}
+  ${proj.description}
+  Technologies: ${proj.technologies.join(', ')}
+  ${proj.startDate} - ${proj.endDate}
+  ${proj.achievements.length > 0 ? `Achievements:\n${proj.achievements.map(a => `  - ${a}`).join('\n')}` : ''}
+  ${proj.link ? `Link: ${proj.link}` : ''}`).join('\n')}
+
+Please generate a professional resume content that:
+1. Highlights key achievements and impact
+2. Uses action verbs and quantifiable results
+3. Maintains a clear and consistent format
+4. Is optimized for ATS systems
+5. Focuses on relevant skills and experiences`;
+
+      const result = await this.generateContent(prompt);
+      return {
+        status: 'success',
+        data: result
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Failed to generate resume content'
+      };
+    }
   }
 }
 

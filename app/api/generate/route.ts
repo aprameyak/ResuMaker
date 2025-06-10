@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateResumeContent } from '@/app/utils/geminiService';
+import { geminiService } from '@/app/utils/geminiService';
 import { FormData } from '@/app/types';
 import { z } from 'zod';
 
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     const validatedData = validationResult.data;
     
     // Generate content
-    const generatedContent = await generateResumeContent(validatedData);
+    const generatedContent = await geminiService.generateResumeContent(validatedData);
     
     if (generatedContent.status === 'error') {
       console.error('[GENERATION ERROR]', generatedContent.error);

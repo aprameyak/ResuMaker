@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateLatexDocument } from '@/app/utils/latexTemplate';
+import { generateLatexDocument } from '../../utils/latexTemplate';
 import { FormData } from '@/app/types';
 import { exec } from 'child_process';
 import { writeFile, mkdir } from 'fs/promises';

@@ -27,35 +27,32 @@ export async function POST(request: NextRequest): Promise<NextResponse<APIRespon
   }
 
   try {
-    // Only initialize rate limiter if Redis is configured
-    let rateLimitResult;
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN || 
-        process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-      const limiter = rateLimit({
-        interval: 60 * 1000, // 1 minute
-        uniqueTokenPerInterval: 10,
-      });
-      
-      // Apply rate limiting based on IP
-      const ip = request.headers.get('x-forwarded-for') || 'anonymous';
-      rateLimitResult = await limiter.check(10, ip);
+    // Initialize rate limiter
+    const limiter = rateLimit({
+      interval: 60 * 1000, // 1 minute
+      uniqueTokenPerInterval: 500,
+      limit: 10
+    });
+    
+    // Apply rate limiting based on IP
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+    const rateLimitResult = limiter.check(ip);
 
-      if (!rateLimitResult.success) {
-        return NextResponse.json<APIResponse<AIFeedback[]>>(
-          { 
-            status: 'error',
-            error: 'Rate limit exceeded. Please try again later.'
-          },
-          { 
-            status: 429,
-            headers: {
-              'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-              'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-              'X-RateLimit-Reset': rateLimitResult.reset.toString(),
-            }
+    if (!rateLimitResult.success) {
+      return NextResponse.json<APIResponse<AIFeedback[]>>(
+        { 
+          status: 'error',
+          error: 'Rate limit exceeded. Please try again later.'
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
           }
-        );
-      }
+        }
+      );
     }
 
     // Parse and validate request body
@@ -111,19 +108,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<APIRespon
       );
     }
 
-    const headers: Record<string, string> = {};
-    if (rateLimitResult) {
-      headers['X-RateLimit-Limit'] = rateLimitResult.limit.toString();
-      headers['X-RateLimit-Remaining'] = rateLimitResult.remaining.toString();
-      headers['X-RateLimit-Reset'] = rateLimitResult.reset.toString();
-    }
-
     return NextResponse.json<APIResponse<AIFeedback[]>>(
       {
         status: 'success',
         data: suggestions
       },
-      { headers }
+      { 
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+        }
+      }
     );
   } catch (error) {
     console.error('Error analyzing content:', error);

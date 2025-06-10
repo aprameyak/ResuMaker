@@ -42,8 +42,8 @@ export class ResumeAnalyzer {
   ): Promise<OptimizationResult> {
     const result = await geminiService.improveContent(sectionContent, context);
     
-    if (result.status === 'error') {
-      throw new Error(`Failed to analyze section: ${result.error}`);
+    if (result.status === 'error' || !result.data) {
+      throw new Error(`Failed to analyze section: ${result.error || 'No data returned'}`);
     }
 
     const suggestion = result.data;
