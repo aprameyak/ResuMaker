@@ -63,11 +63,16 @@ npm run dev
 3. Connect your GitHub repository to Vercel.
 
 4. Configure the following environment variables in your Vercel project settings:
-   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Your Clerk publishable key
+   - `CLERK_SECRET_KEY`: Your Clerk secret key
+   - `GOOGLE_AI_API_KEY`: Your Google AI API key
    - `KV_REST_API_URL`: Vercel KV URL (Create in Vercel Storage)
    - `KV_REST_API_TOKEN`: Vercel KV Token
-   - `NEXTAUTH_SECRET`: Generate with `openssl rand -base64 32`
-   - `NEXTAUTH_URL`: Your production URL (Vercel will set this automatically)
+   - `NEXT_PUBLIC_APP_URL`: Your production URL (Vercel will set this automatically)
+   - `NEXT_PUBLIC_CLERK_SIGN_IN_URL`: "/sign-in"
+   - `NEXT_PUBLIC_CLERK_SIGN_UP_URL`: "/sign-up"
+   - `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`: "/"
+   - `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`: "/"
 
 5. Deploy! Vercel will automatically build and deploy your application.
 

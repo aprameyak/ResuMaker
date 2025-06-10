@@ -8,6 +8,10 @@ const nextConfig = {
     GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL: '/sign-in',
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL: '/sign-up',
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: '/',
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: '/',
   },
   images: {
     domains: ['fonts.gstatic.com'],
@@ -32,10 +36,6 @@ const nextConfig = {
       },
     });
     return config;
-  },
-  // Add Clerk authentication configuration
-  clerk: {
-    mountPath: "/auth",
   },
 }
 

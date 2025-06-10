@@ -4,35 +4,28 @@ export default authMiddleware({
   // Public routes that don't require authentication
   publicRoutes: [
     "/",
-    "/sign-in",
-    "/sign-up",
-    "/api/webhook",
-    "/api/parse-resume",
-    "/api/analyze-content",
-    "/api/generate",
-    "/api/latex",
-    "/sitemap.xml",
-    "/robots.txt",
+    "/sign-in(.*)",
+    "/sign-up(.*)",
+    "/api(.*)",
+    "/_next(.*)",
+    "/fonts(.*)",
+    "/images(.*)",
     "/favicon.ico",
-    "/_next/static/(.*)",
-    "/_next/image(.*)",
-    "/images/(.*)",
-    "/fonts/(.*)",
+    "/sitemap.xml",
+    "/robots.txt"
   ],
   
-  // Routes that can be accessed by anyone, but will still have session information if logged in
+  // Ignore specific routes completely
   ignoredRoutes: [
     "/api/parse-resume",
     "/api/analyze-content",
     "/api/generate",
-    "/api/latex",
+    "/api/latex"
   ],
+
+  debug: true // Enable debug mode to get more information about middleware failures
 });
 
-// Matcher configuration for Next.js middleware
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|public|images|fonts).*)",
-    "/(api|trpc)(.*)",
-  ],
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 }; 

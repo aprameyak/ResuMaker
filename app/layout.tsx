@@ -90,7 +90,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`h-full bg-gray-50 ${inter.variable}`}>
       <body className="h-full">
-        <ClerkProvider>
+        <ClerkProvider
+          appearance={{
+            baseTheme: undefined
+          }}
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        >
           <Navigation />
           <main>{children}</main>
         </ClerkProvider>
