@@ -35,7 +35,7 @@ class GeminiService {
   private config: GenerationConfig;
 
   constructor() {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
     this.model = genAI.getGenerativeModel({ model: 'gemini-pro' });
     this.config = {
       temperature: 0.7,
