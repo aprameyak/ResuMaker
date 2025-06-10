@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install && npm run build",
+  "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
@@ -11,9 +11,7 @@
     "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
     "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
     "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/",
-    "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/",
-    "RATE_LIMIT_REQUESTS": "10",
-    "RATE_LIMIT_INTERVAL": "60000"
+    "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/"
   },
   "headers": [
     {

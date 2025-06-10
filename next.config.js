@@ -19,29 +19,9 @@ const nextConfig = {
     minimumCacheTTL: 60,
     formats: ['image/webp', 'image/avif'],
   },
-  experimental: {
-    optimizeCss: true,
-    scrollRestoration: true
-  },
   optimizeFonts: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
-  },
-  webpack(config) {
-    config.module.rules.push({
-      test: /\.(woff|woff2|eot|ttf|otf)$/,
-      use: {
-        loader: 'url-loader',
-        options: {
-          limit: 8192,
-          fallback: 'file-loader',
-          publicPath: '/_next/static/fonts/',
-          outputPath: 'static/fonts/',
-          name: '[name]-[hash].[ext]',
-        },
-      },
-    });
-    return config;
   },
   async headers() {
     return [
