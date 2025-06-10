@@ -24,7 +24,8 @@ const DEFAULT_DATA: FormData = {
     technical: [],
     soft: [],
     languages: [],
-    certifications: []
+    certifications: [],
+    description: ''
   },
   projects: []
 };
@@ -64,7 +65,9 @@ export default function ResumeEditor({ initialData, onSave }: EditorProps) {
         startDate: '',
         endDate: '',
         location: '',
-        achievements: []
+        achievements: [],
+        description: '',
+        gpa: ''
       }]
     }));
     setIsDirty(true);

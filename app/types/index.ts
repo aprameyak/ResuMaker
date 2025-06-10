@@ -17,6 +17,7 @@ export interface Education {
   gpa?: string;
   achievements: string[];
   location: string;
+  description: string;
 }
 
 export interface Project {
@@ -34,6 +35,7 @@ export interface Skills {
   soft: string[];
   languages: string[];
   certifications: string[];
+  description: string;
 }
 
 export interface PersonalInfo {

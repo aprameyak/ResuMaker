@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { rateLimit } from '@/app/lib/rate-limit';
+import { RateLimit } from '@/app/lib/rate-limit';
 import { z } from 'zod';
 import { AIFeedback, APIResponse } from '@/app/types';
 
@@ -19,39 +19,30 @@ const requestSchema = z.object({
 
 export async function POST(request: NextRequest): Promise<NextResponse<APIResponse<AIFeedback[]>>> {
   if (!process.env.GOOGLE_AI_API_KEY) {
-    console.error('API request failed: GOOGLE_AI_API_KEY is not configured');
     return NextResponse.json<APIResponse<AIFeedback[]>>(
-      { status: 'error', error: 'API configuration error. Please check server logs.' },
+      { status: 'error', error: 'API configuration error' },
       { status: 500 }
     );
   }
 
   try {
-    // Only initialize rate limiter if Redis is configured
-    const limiter = rateLimit({
-      interval: 60 * 1000, // 1 minute
-      uniqueTokenPerInterval: 500,
+    // Initialize rate limiter
+    const limiter = new RateLimit({
+      interval: 60,  // 1 minute in seconds
       limit: 10
     });
     
     // Apply rate limiting based on IP
     const ip = request.headers.get('x-forwarded-for') || 'anonymous';
-    const rateLimitResult = limiter.check(ip);
+    const isLimited = await limiter.isRateLimited(ip);
 
-    if (!rateLimitResult.success) {
+    if (isLimited) {
       return NextResponse.json<APIResponse<AIFeedback[]>>(
         { 
           status: 'error',
           error: 'Rate limit exceeded. Please try again later.'
         },
-        { 
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
-          }
-        }
+        { status: 429 }
       );
     }
 
@@ -112,13 +103,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<APIRespon
       {
         status: 'success',
         data: suggestions
-      },
-      { 
-        headers: {
-          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-          'X-RateLimit-Reset': rateLimitResult.reset.toString(),
-        }
       }
     );
   } catch (error) {

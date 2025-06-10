@@ -2,7 +2,6 @@ import React, { useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { FormData } from '@/app/types';
-import { rateLimit } from '@/app/lib/rate-limit';
 
 interface ResumeTemplateProps {
   data: FormData;

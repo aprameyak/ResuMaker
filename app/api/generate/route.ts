@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { geminiService } from '@/app/utils/geminiService';
+import { generateResumeContent } from '../../utils/geminiService';
 import { FormData } from '@/app/types';
 import { z } from 'zod';
 
@@ -22,6 +22,8 @@ const formDataSchema = z.object({
     startDate: z.string().min(1, "Start date is required"),
     endDate: z.string().min(1, "End date is required"),
     location: z.string().min(1, "Location is required"),
+    description: z.string().min(1, "Description is required"),
+    gpa: z.string().optional(),
     achievements: z.array(z.string()),
   })).min(1, "At least one education entry is required"),
   experience: z.array(z.object({
@@ -38,6 +40,7 @@ const formDataSchema = z.object({
     soft: z.array(z.string()).min(1, "At least one soft skill is required"),
     languages: z.array(z.string()),
     certifications: z.array(z.string()),
+    description: z.string().min(1, "Skills description is required")
   }),
   projects: z.array(z.object({
     name: z.string().min(1, "Project name is required"),
@@ -88,7 +91,7 @@ export async function POST(request: Request) {
     const validatedData = validationResult.data;
     
     // Generate content
-    const generatedContent = await geminiService.generateResumeContent(validatedData);
+    const generatedContent = await generateResumeContent(validatedData);
     
     if (generatedContent.status === 'error') {
       console.error('[GENERATION ERROR]', generatedContent.error);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
-import { rateLimit } from '@/app/lib/rate-limit';
+import { RateLimit } from '../../lib/rate-limit';
 
 // Validate request body schema
 const requestSchema = z.object({
@@ -14,30 +14,22 @@ const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 export async function POST(request: NextRequest) {
   try {
     // Initialize rate limiter
-    const limiter = rateLimit({
-      interval: 60 * 1000, // 1 minute
-      uniqueTokenPerInterval: 500,
+    const limiter = new RateLimit({
+      interval: 60,  // 1 minute in seconds
       limit: 10
     });
     
     // Apply rate limiting based on IP
     const ip = request.headers.get('x-forwarded-for') || 'anonymous';
-    const rateLimitResult = limiter.check(ip);
+    const isLimited = await limiter.isRateLimited(ip);
 
-    if (!rateLimitResult.success) {
+    if (isLimited) {
       return NextResponse.json(
         { 
           status: 'error',
           error: 'Rate limit exceeded. Please try again later.'
         },
-        { 
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
-          }
-        }
+        { status: 429 }
       );
     }
 
@@ -94,12 +86,6 @@ Only respond with the JSON object, no other text.`;
           industry: analysis.industry
         }
       }
-    }, {
-      headers: {
-        'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-        'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-        'X-RateLimit-Reset': rateLimitResult.reset.toString(),
-      }
     });
   } catch (error) {
     console.error('Error analyzing job description:', error);
@@ -108,7 +94,6 @@ Only respond with the JSON object, no other text.`;
         status: 'error',
         error: 'Failed to analyze job description'
       },
-      { error: 'Failed to analyze job description' },
       { status: 500 }
     );
   }

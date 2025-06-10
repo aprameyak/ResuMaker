@@ -14,14 +14,14 @@ const nextConfig = {
     NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: '/',
   },
   images: {
-    domains: ['fonts.gstatic.com'],
+    domains: ['fonts.gstatic.com', 'images.clerk.dev'],
     unoptimized: false,
     minimumCacheTTL: 60,
-    formats: ['image/webp'],
+    formats: ['image/webp', 'image/avif'],
   },
   experimental: {
     optimizeCss: true,
-    scrollRestoration: true,
+    scrollRestoration: true
   },
   optimizeFonts: true,
   compiler: {
@@ -42,6 +42,33 @@ const nextConfig = {
       },
     });
     return config;
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin',
+          },
+        ],
+      },
+    ];
+  },
+  async redirects() {
+    return [];
+  },
+  async rewrites() {
+    return [];
   },
 }
 

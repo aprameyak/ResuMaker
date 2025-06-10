@@ -39,7 +39,8 @@ const DEFAULT_SKILLS: Skills = {
   technical: [],
   soft: [],
   languages: [],
-  certifications: []
+  certifications: [],
+  description: ''
 };
 
 const DEFAULT_FORM_DATA: FormData = {
@@ -59,7 +60,8 @@ const DEFAULT_FORM_DATA: FormData = {
     technical: [],
     soft: [],
     languages: [],
-    certifications: []
+    certifications: [],
+    description: ''
   },
   projects: []
 };

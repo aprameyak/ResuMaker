@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FormData, ResumeSection, AIFeedback, APIResponse } from '@/app/types';
+import { FormData, AIFeedback, APIResponse } from '@/app/types';
 
 interface AIResumeEditorProps {
-  section: ResumeSection;
+  section: {
+    type: 'education' | 'experience' | 'skills' | 'projects' | 'summary';
+    title: string;
+  };
   content: string;
   onUpdate: (newContent: string) => void;
 }
@@ -30,7 +33,7 @@ export default function AIResumeEditor({ section, content, onUpdate }: AIResumeE
         },
         body: JSON.stringify({
           content: text,
-          sectionType: section.type,
+          type: section.type,
         }),
       });
 

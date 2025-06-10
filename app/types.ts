@@ -78,7 +78,11 @@ export interface PersonalInfo {
   github?: string;
 }
 
-export interface Education {
+export interface BaseSection {
+  description?: string;
+}
+
+export interface Education extends BaseSection {
   institution: string;
   degree: string;
   field: string;
@@ -87,9 +91,10 @@ export interface Education {
   gpa?: string;
   achievements: string[];
   location: string;
+  description: string;
 }
 
-export interface Experience {
+export interface Experience extends BaseSection {
   company: string;
   position: string;
   startDate: string;
@@ -99,14 +104,15 @@ export interface Experience {
   achievements: string[];
 }
 
-export interface Skills {
+export interface Skills extends BaseSection {
   technical: string[];
   soft: string[];
   languages: string[];
   certifications: string[];
+  description: string;
 }
 
-export interface Project {
+export interface Project extends BaseSection {
   name: string;
   description: string;
   technologies: string[];

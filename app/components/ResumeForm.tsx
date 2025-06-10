@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AIResumeEditor from './AIResumeEditor';
-import { FormData, ResumeSection, ResumeSectionType } from '@/app/types';
+import { FormData, Experience, Education, Project, Skills, PersonalInfo } from '@/app/types';
+import { debounce } from 'lodash';
 
 interface FormErrors {
   [key: string]: string;
@@ -14,7 +15,7 @@ interface ResumeFormProps {
 export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [formData, setFormData] = useState<FormData>(initialData || {
+  const defaultFormData: FormData = {
     personalInfo: {
       fullName: '',
       title: '',
@@ -32,9 +33,12 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
       technical: [],
       soft: [],
       languages: [],
-      certifications: []
+      certifications: [],
+      description: ''
     }
-  });
+  };
+
+  const [formData, setFormData] = useState<FormData>(initialData || defaultFormData);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -179,17 +183,21 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
   };
 
   const addEducation = () => {
+    const newEducation: Education = {
+      institution: '',
+      degree: '',
+      field: '',
+      startDate: '',
+      endDate: '',
+      gpa: '',
+      location: '',
+      achievements: [],
+      description: ''
+    };
+
     setFormData((prev) => ({
       ...prev,
-      education: [...prev.education, {
-        institution: '',
-        degree: '',
-        field: '',
-        startDate: '',
-        endDate: '',
-        location: '',
-        achievements: []
-      }]
+      education: [...prev.education, newEducation]
     }));
   };
 
@@ -231,18 +239,6 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
       }
     }));
   };
-
-  const createResumeSection = (
-    id: string,
-    title: string,
-    content: string,
-    type: ResumeSectionType
-  ): ResumeSection => ({
-    id,
-    title,
-    content,
-    type
-  });
 
   const styles = {
     form: {
@@ -610,15 +606,13 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
                 <label className="block text-sm font-medium text-gray-700">Description</label>
                 <AIResumeEditor
                   section={{
-                    id: `experience-${index}`,
                     title: 'Experience Description',
-                    content: exp.description,
                     type: 'experience'
                   }}
                   content={exp.description}
-                  onUpdate={(newContent) => {
+                  onUpdate={(value) => {
                     const newExp = [...formData.experience];
-                    newExp[index] = { ...newExp[index], description: newContent };
+                    newExp[index] = { ...exp, description: value };
                     setFormData({ ...formData, experience: newExp });
                   }}
                 />
@@ -744,6 +738,22 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
                 required
               />
               {errors[`education_${index}_location`] && <div style={styles.error}>{errors[`education_${index}_location`]}</div>}
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <AIResumeEditor
+                  section={{
+                    title: 'Education Description',
+                    type: 'education'
+                  }}
+                  content={edu.description || ''}
+                  onUpdate={(value) => {
+                    const newEdu = [...formData.education];
+                    newEdu[index] = { ...edu, description: value };
+                    setFormData({ ...formData, education: newEdu });
+                  }}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -766,9 +776,7 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
             <label className="block text-sm font-medium text-gray-700">Technical Skills</label>
             <AIResumeEditor
               section={{
-                id: 'technical-skills',
                 title: 'Technical Skills',
-                content: formData.skills.technical.join(', '),
                 type: 'skills'
               }}
               content={formData.skills.technical.join(', ')}
@@ -789,9 +797,7 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
             <label className="block text-sm font-medium text-gray-700">Soft Skills</label>
             <AIResumeEditor
               section={{
-                id: 'soft-skills',
                 title: 'Soft Skills',
-                content: formData.skills.soft.join(', '),
                 type: 'skills'
               }}
               content={formData.skills.soft.join(', ')}
@@ -812,9 +818,7 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
             <label className="block text-sm font-medium text-gray-700">Languages</label>
             <AIResumeEditor
               section={{
-                id: 'languages',
                 title: 'Languages',
-                content: formData.skills.languages.join(', '),
                 type: 'skills'
               }}
               content={formData.skills.languages.join(', ')}
@@ -835,9 +839,7 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
             <label className="block text-sm font-medium text-gray-700">Certifications</label>
             <AIResumeEditor
               section={{
-                id: 'certifications',
                 title: 'Certifications',
-                content: formData.skills.certifications.join(', '),
                 type: 'skills'
               }}
               content={formData.skills.certifications.join(', ')}
@@ -848,6 +850,26 @@ export default function ResumeForm({ onSubmit, initialData }: ResumeFormProps) {
                   skills: {
                     ...prev.skills,
                     certifications: newContent.split(',').map(cert => cert.trim()).filter(Boolean)
+                  }
+                }));
+              }}
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Skills Description</label>
+            <AIResumeEditor
+              section={{
+                title: 'Skills Description',
+                type: 'skills'
+              }}
+              content={formData.skills.description || ''}
+              onUpdate={(value) => {
+                setFormData(prev => ({
+                  ...prev,
+                  skills: {
+                    ...prev.skills,
+                    description: value
                   }
                 }));
               }}
