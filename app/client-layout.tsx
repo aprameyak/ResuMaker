@@ -1,6 +1,5 @@
 'use client';
 
-import { ClerkProvider } from '@clerk/nextjs';
 import { Inter } from 'next/font/google';
 import Navigation from './components/Navigation';
 
@@ -12,11 +11,9 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <div className={`min-h-screen ${inter.variable}`}>
-        <Navigation />
-        <main>{children}</main>
-      </div>
-    </ClerkProvider>
+    <div className={`min-h-screen ${inter.variable}`}>
+      <Navigation />
+      <main>{children}</main>
+    </div>
   );
 } 

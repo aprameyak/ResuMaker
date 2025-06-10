@@ -30,8 +30,9 @@ class RateLimiter {
         url: process.env.UPSTASH_REDIS_REST_URL,
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
       });
+    } else {
+      console.warn('Rate limiting is disabled: No Redis configuration found. This is not recommended for production.');
     }
-    // If neither is configured, redis will remain null and rate limiting will be disabled
   }
 
   async check(limit: number, identifier: string): Promise<RateLimitResult> {

@@ -11,8 +11,13 @@ export default authMiddleware({
     "/api/analyze-content",
     "/api/generate",
     "/api/latex",
-    "/_next/static/(.*)",
+    "/sitemap.xml",
+    "/robots.txt",
     "/favicon.ico",
+    "/_next/static/(.*)",
+    "/_next/image(.*)",
+    "/images/(.*)",
+    "/fonts/(.*)",
   ],
   
   // Routes that can be accessed by anyone, but will still have session information if logged in
@@ -24,10 +29,10 @@ export default authMiddleware({
   ],
 });
 
+// Matcher configuration for Next.js middleware
 export const config = {
   matcher: [
-    "/((?!.*\\..*|_next).*)",
-    "/",
+    "/((?!_next/static|_next/image|favicon.ico|public|images|fonts).*)",
     "/(api|trpc)(.*)",
   ],
 }; 
