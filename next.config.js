@@ -7,14 +7,11 @@ const nextConfig = {
   env: {
     GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-    NEXT_PUBLIC_CLERK_SIGN_IN_URL: '/sign-in',
-    NEXT_PUBLIC_CLERK_SIGN_UP_URL: '/sign-up',
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: '/',
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: '/',
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   },
   images: {
-    domains: ['fonts.gstatic.com', 'images.clerk.dev'],
+    domains: ['fonts.gstatic.com'],
     unoptimized: false,
     minimumCacheTTL: 60,
     formats: ['image/webp', 'image/avif'],
@@ -30,7 +27,27 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.dev; connect-src 'self' https://*.clerk.com https://*.clerk.dev; frame-src 'self' https://*.clerk.com https://*.clerk.dev; img-src 'self' data: https://*.clerk.com https://*.clerk.dev; style-src 'self' 'unsafe-inline';"
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; script-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://generativelanguage.googleapis.com; frame-src 'self'; img-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains'
           }
         ]
       }

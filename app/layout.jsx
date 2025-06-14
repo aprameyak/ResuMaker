@@ -1,7 +1,8 @@
-import { ClerkProvider } from '@clerk/nextjs';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Navigation from './components/Navigation';
+import ErrorBoundary from './components/ErrorBoundary';
+import SessionWrapper from './components/SessionWrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -12,23 +13,17 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider 
-      appearance={{
-        elements: {
-          formButtonPrimary: 'bg-blue-600 hover:bg-blue-700 text-sm normal-case',
-          footerAction: 'text-blue-600',
-          card: 'rounded-md shadow-md',
-        }
-      }}
-    >
-      <html lang="en" suppressHydrationWarning>
-        <body className={inter.className} suppressHydrationWarning>
-          <Navigation />
-          <main className="container mx-auto px-4 pt-4">
-            {children}
-          </main>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
+        <SessionWrapper>
+          <ErrorBoundary>
+            <Navigation />
+            <main className="container mx-auto px-4 pt-4">
+              {children}
+            </main>
+          </ErrorBoundary>
+        </SessionWrapper>
+      </body>
+    </html>
   );
 } 

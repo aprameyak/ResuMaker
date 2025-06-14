@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/nextjs';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 export default function Navigation() {
-  const { userId, isLoaded } = useAuth();
+  const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -21,7 +21,7 @@ export default function Navigation() {
         </Link>
 
         <div className="flex items-center space-x-6">
-          {isLoaded && userId ? (
+          {session ? (
             <>
               <Link href="/create" className={`font-medium ${isActive('/create')}`}>
                 Create
@@ -32,22 +32,32 @@ export default function Navigation() {
               <Link href="/tailor" className={`font-medium ${isActive('/tailor')}`}>
                 Tailor
               </Link>
-              <div className="ml-4">
-                <UserButton afterSignOutUrl="/" />
+              <div className="ml-4 flex items-center space-x-2">
+                <span className="text-sm text-gray-600">
+                  {session.user?.name || session.user?.email}
+                </span>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition-colors text-sm"
+                >
+                  Sign Out
+                </button>
               </div>
             </>
           ) : (
             <>
-              <SignInButton mode="modal">
-                <button className={`font-medium ${isActive('/sign-in')}`}>
-                  Sign In
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                  Sign Up
-                </button>
-              </SignUpButton>
+              <button
+                onClick={() => signIn()}
+                className={`font-medium ${isActive('/auth/signin')}`}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => signIn()}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Get Started
+              </button>
             </>
           )}
         </div>

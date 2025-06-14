@@ -1,14 +1,6 @@
-import { auth } from '@clerk/nextjs/server';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Home() {
-  const { userId } = auth();
-
-  if (userId) {
-    redirect('/create');
-  }
-
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center py-12">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex mb-8">

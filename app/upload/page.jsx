@@ -2,20 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+import { useSession } from 'next-auth/react';
 import { FiUpload } from 'react-icons/fi';
 
 export default function UploadPage() {
   const router = useRouter();
-  const { userId, isLoaded } = useAuth();
+  const { data: session, status } = useSession();
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isLoaded && !userId) {
-      router.push('/sign-in');
+    if (status === 'loading') return;
+    if (!session) {
+      router.push('/auth/signin');
     }
-  }, [isLoaded, userId, router]);
+  }, [session, status, router]);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -53,8 +54,12 @@ export default function UploadPage() {
     }
   };
 
-  if (!isLoaded || !userId) {
+  if (status === 'loading') {
     return <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">Loading...</div>;
+  }
+
+  if (!session) {
+    return null;
   }
 
   return (

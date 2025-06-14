@@ -1,29 +1,33 @@
-import { authMiddleware } from "@clerk/nextjs/server";
+import { withAuth } from "next-auth/middleware"
 
-// Main Clerk middleware function
-export default authMiddleware({
-  // Routes that can be accessed while signed out
-  publicRoutes: [
-    "/",
-    "/sign-in(.*)",
-    "/sign-up(.*)",
-    "/api/parse-resume",
-    "/_next(.*)",
-    "/fonts(.*)",
-    "/images(.*)",
-    "/favicon.ico",
-    "/sitemap.xml",
-    "/robots.txt"
-  ],
-  // Routes that can always be accessed, and have
-  // no authentication information
-  ignoredRoutes: [
-    "/api/health",
-    "/api/webhooks(.*)"
-  ],
-});
+export default withAuth(
+  function middleware(req) {
+    // Add any additional middleware logic here
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        // Allow access to public routes
+        const publicPaths = [
+          '/',
+          '/api/parse-resume',
+          '/api/health',
+          '/api/webhooks',
+          '/auth/signin',
+          '/auth/error'
+        ];
+        
+        if (publicPaths.some(path => req.nextUrl.pathname.startsWith(path))) {
+          return true;
+        }
+        
+        // Require authentication for protected routes
+        return !!token;
+      },
+    },
+  }
+)
 
-// Configure the matcher to specify which paths the middleware should run on
 export const config = {
   matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 }; 

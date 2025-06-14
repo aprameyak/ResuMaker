@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+import { useSession } from 'next-auth/react';
 import ResumeEditor from '../components/ResumeEditor';
 import ResumeTemplates from '../components/ResumeTemplates';
 import { SECTION_TYPES } from '../constants';
@@ -10,7 +10,7 @@ import { FiHelpCircle } from 'react-icons/fi';
 
 export default function CreatePage() {
   const router = useRouter();
-  const { userId, isLoaded } = useAuth();
+  const { data: session, status } = useSession();
   const [showTemplates, setShowTemplates] = useState(true);
   const [sections, setSections] = useState([
     {
@@ -23,10 +23,11 @@ export default function CreatePage() {
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
-    if (isLoaded && !userId) {
-      router.push('/sign-in');
+    if (status === 'loading') return; // Still loading
+    if (!session) {
+      router.push('/auth/signin');
     }
-  }, [isLoaded, userId, router]);
+  }, [session, status, router]);
 
   const handleSelectTemplate = (templateSections) => {
     setSections(templateSections);
@@ -53,8 +54,12 @@ export default function CreatePage() {
     setSections(sections.filter(s => s.id !== section.id));
   };
 
-  if (!isLoaded || !userId) {
+  if (status === 'loading') {
     return <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">Loading...</div>;
+  }
+
+  if (!session) {
+    return null; // Will redirect in useEffect
   }
 
   return (

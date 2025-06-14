@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
 import { ENV_VARS, API_RESPONSE } from '../../constants';
+import { rateLimit, getRateLimitHeaders } from '../../lib/rate-limiter';
 
 // Validate request body schema
 const requestSchema = z.object({
@@ -14,6 +15,20 @@ const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
 export async function POST(request) {
   try {
+    // Rate limiting
+    const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = rateLimit(clientIP);
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { status: API_RESPONSE.ERROR, error: 'Rate limit exceeded. Please try again later.' },
+        { 
+          status: 429,
+          headers: getRateLimitHeaders(rateLimitResult)
+        }
+      );
+    }
+
     // Parse and validate request body
     const body = await request.json();
     const validatedData = requestSchema.safeParse(body);
@@ -69,6 +84,9 @@ export async function POST(request) {
       {
         status: API_RESPONSE.SUCCESS,
         data: suggestions
+      },
+      {
+        headers: getRateLimitHeaders(rateLimitResult)
       }
     );
   } catch (error) {
