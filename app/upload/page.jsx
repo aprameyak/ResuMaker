@@ -2,21 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { getSession } from 'next-auth/react';
 import { FiUpload } from 'react-icons/fi';
+
+// Force dynamic rendering for auth-protected pages
+export const dynamic = 'force-dynamic';
 
 export default function UploadPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!session) {
-      router.push('/auth/signin');
-    }
-  }, [session, status, router]);
+    const checkAuth = async () => {
+      const sessionData = await getSession();
+      if (!sessionData) {
+        router.push('/auth/signin');
+        return;
+      }
+      setSession(sessionData);
+      setLoading(false);
+    };
+    checkAuth();
+  }, [router]);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -30,7 +40,7 @@ export default function UploadPage() {
   const handleUpload = async () => {
     if (!file) return;
 
-    setLoading(true);
+    setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
 
@@ -50,11 +60,11 @@ export default function UploadPage() {
       console.error('Upload error:', error);
       alert('Failed to upload resume. Please try again.');
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   };
 
-  if (status === 'loading') {
+  if (loading) {
     return <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">Loading...</div>;
   }
 
@@ -88,14 +98,14 @@ export default function UploadPage() {
 
         <button
           onClick={handleUpload}
-          disabled={!file || loading}
+          disabled={!file || uploading}
           className={`mt-4 w-full py-2 px-4 rounded-md text-white ${
-            !file || loading
+            !file || uploading
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {loading ? 'Uploading...' : 'Upload Resume'}
+          {uploading ? 'Uploading...' : 'Upload Resume'}
         </button>
       </div>
     </div>

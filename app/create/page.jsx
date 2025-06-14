@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { getSession } from 'next-auth/react';
 import ResumeEditor from '../components/ResumeEditor';
 import ResumeTemplates from '../components/ResumeTemplates';
 import { SECTION_TYPES } from '../constants';
 import { FiHelpCircle } from 'react-icons/fi';
 
+// Force dynamic rendering for auth-protected pages
+export const dynamic = 'force-dynamic';
+
 export default function CreatePage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showTemplates, setShowTemplates] = useState(true);
   const [sections, setSections] = useState([
     {
@@ -23,11 +27,17 @@ export default function CreatePage() {
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
-    if (status === 'loading') return; // Still loading
-    if (!session) {
-      router.push('/auth/signin');
-    }
-  }, [session, status, router]);
+    const checkAuth = async () => {
+      const sessionData = await getSession();
+      if (!sessionData) {
+        router.push('/auth/signin');
+        return;
+      }
+      setSession(sessionData);
+      setLoading(false);
+    };
+    checkAuth();
+  }, [router]);
 
   const handleSelectTemplate = (templateSections) => {
     setSections(templateSections);
@@ -54,7 +64,7 @@ export default function CreatePage() {
     setSections(sections.filter(s => s.id !== section.id));
   };
 
-  if (status === 'loading') {
+  if (loading) {
     return <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">Loading...</div>;
   }
 

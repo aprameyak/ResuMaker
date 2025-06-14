@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Navigation() {
-  const { data: session, status } = useSession();
+  const { user, loading, signOut } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -21,7 +21,7 @@ export default function Navigation() {
         </Link>
 
         <div className="flex items-center space-x-6">
-          {session ? (
+          {user ? (
             <>
               <Link href="/create" className={`font-medium ${isActive('/create')}`}>
                 Create
@@ -34,10 +34,10 @@ export default function Navigation() {
               </Link>
               <div className="ml-4 flex items-center space-x-2">
                 <span className="text-sm text-gray-600">
-                  {session.user?.name || session.user?.email}
+                  {user.user_metadata?.full_name || user.email}
                 </span>
                 <button
-                  onClick={() => signOut({ callbackUrl: '/' })}
+                  onClick={() => signOut()}
                   className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition-colors text-sm"
                 >
                   Sign Out
@@ -46,18 +46,18 @@ export default function Navigation() {
             </>
           ) : (
             <>
-              <button
-                onClick={() => signIn()}
-                className={`font-medium ${isActive('/auth/signin')}`}
+              <Link
+                href="/auth"
+                className={`font-medium ${isActive('/auth')}`}
               >
                 Sign In
-              </button>
-              <button
-                onClick={() => signIn()}
+              </Link>
+              <Link
+                href="/auth"
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
               >
                 Get Started
-              </button>
+              </Link>
             </>
           )}
         </div>

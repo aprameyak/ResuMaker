@@ -2,26 +2,38 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { getSession } from 'next-auth/react';
+
+// Force dynamic rendering for auth-protected pages
+export const dynamic = 'force-dynamic';
 
 export default function TailorPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [jobDescription, setJobDescription] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [resume, setResume] = useState('');
+  const [tailoredResume, setTailoredResume] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!session) {
-      router.push('/auth/signin');
-    }
-  }, [session, status, router]);
+    const checkAuth = async () => {
+      const sessionData = await getSession();
+      if (!sessionData) {
+        router.push('/auth/signin');
+        return;
+      }
+      setSession(sessionData);
+      setLoading(false);
+    };
+    checkAuth();
+  }, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!jobDescription.trim()) return;
 
-    setLoading(true);
+    setIsProcessing(true);
     try {
       const response = await fetch('/api/analyze-job-description', {
         method: 'POST',
@@ -41,11 +53,11 @@ export default function TailorPage() {
       console.error('Analysis error:', error);
       alert('Failed to analyze job description. Please try again.');
     } finally {
-      setLoading(false);
+      setIsProcessing(false);
     }
   };
 
-  if (status === 'loading') {
+  if (loading) {
     return <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">Loading...</div>;
   }
 
@@ -78,14 +90,14 @@ export default function TailorPage() {
 
           <button
             type="submit"
-            disabled={!jobDescription.trim() || loading}
+            disabled={!jobDescription.trim() || isProcessing}
             className={`w-full py-2 px-4 rounded-md text-white ${
-              !jobDescription.trim() || loading
+              !jobDescription.trim() || isProcessing
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            {loading ? 'Analyzing...' : 'Analyze & Tailor Resume'}
+            {isProcessing ? 'Analyzing...' : 'Analyze & Tailor Resume'}
           </button>
         </form>
       </div>

@@ -4,6 +4,7 @@ const nextConfig = {
   swcMinify: true,
   poweredByHeader: false,
   compress: true,
+
   env: {
     GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
