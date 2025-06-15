@@ -1,14 +1,15 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 
 export async function middleware(req) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
-
-  // Refresh session if expired - required for Server Components
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // Skip middleware for static files and API routes
+  if (
+    req.nextUrl.pathname.startsWith('/_next') ||
+    req.nextUrl.pathname.startsWith('/api') ||
+    req.nextUrl.pathname.includes('.') ||
+    req.nextUrl.pathname === '/favicon.ico'
+  ) {
+    return NextResponse.next()
+  }
 
   // Protected routes that require authentication
   const protectedRoutes = ['/create', '/dashboard', '/profile']
@@ -16,30 +17,23 @@ export async function middleware(req) {
     req.nextUrl.pathname.startsWith(route)
   )
 
-  // If accessing a protected route without a session, redirect to auth
-  if (isProtectedRoute && !session) {
-    const redirectUrl = new URL('/auth', req.url)
-    redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
+  // For protected routes, redirect to auth page
+  // The actual auth check will happen on the client side
+  if (isProtectedRoute) {
+    const authCookie = req.cookies.get('sb-access-token') || req.cookies.get('supabase-auth-token')
+    
+    if (!authCookie) {
+      const redirectUrl = new URL('/auth', req.url)
+      redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
   }
 
-  // If accessing auth page while already authenticated, redirect to home
-  if (req.nextUrl.pathname === '/auth' && session) {
-    return NextResponse.redirect(new URL('/', req.url))
-  }
-
-  return res
+  return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|public|api/health).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 } 
