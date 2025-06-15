@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '../../contexts/AuthContext';
 import { FiUpload, FiFile, FiX } from 'react-icons/fi';
 
 // Force dynamic rendering for auth-protected pages
@@ -10,17 +10,17 @@ export const dynamic = 'force-dynamic';
 
 export default function UploadPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [parsedData, setParsedData] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (!loading && !user) {
       router.push('/auth');
     }
-  }, [status, router]);
+  }, [user, loading, router]);
 
   const handleFileSelect = (event) => {
     const selectedFile = event.target.files[0];
@@ -73,7 +73,7 @@ export default function UploadPage() {
     setError('');
   };
 
-  if (status === 'loading') {
+  if (loading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -81,7 +81,7 @@ export default function UploadPage() {
     );
   }
 
-  if (!session) {
+  if (!user) {
     return null;
   }
 

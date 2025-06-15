@@ -3,7 +3,6 @@ import './globals.css';
 import Navigation from './components/Navigation';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from '../contexts/AuthContext';
-import SessionWrapper from './components/SessionWrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,16 +15,14 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <SessionWrapper>
-          <AuthProvider>
-            <ErrorBoundary>
-              <Navigation />
-              <main className="container mx-auto px-4 pt-4">
-                {children}
-              </main>
-            </ErrorBoundary>
-          </AuthProvider>
-        </SessionWrapper>
+        <AuthProvider>
+          <ErrorBoundary>
+            <Navigation />
+            <main className="container mx-auto px-4 pt-4">
+              {children}
+            </main>
+          </ErrorBoundary>
+        </AuthProvider>
       </body>
     </html>
   );

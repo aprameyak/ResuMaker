@@ -1,65 +1,70 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
+import { FiUser, FiLogOut } from 'react-icons/fi';
 
 export default function Navigation() {
-  const { user, loading, signOut } = useAuth();
-  const pathname = usePathname();
-  const router = useRouter();
+  const { user, signOut } = useAuth();
 
-  const isActive = (path) => {
-    return pathname === path ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700';
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
-    <nav className="bg-white shadow-md px-6 py-3 w-full">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <Link href="/" className="text-xl font-bold text-blue-600">
-          ResuMaker
-        </Link>
-
-        <div className="flex items-center space-x-6">
-          {user ? (
-            <>
-              <Link href="/create" className={`font-medium ${isActive('/create')}`}>
-                Create
-              </Link>
-              <Link href="/upload" className={`font-medium ${isActive('/upload')}`}>
-                Upload
-              </Link>
-              <Link href="/tailor" className={`font-medium ${isActive('/tailor')}`}>
-                Tailor
-              </Link>
-              <div className="ml-4 flex items-center space-x-2">
-                <span className="text-sm text-gray-600">
-                  {user.user_metadata?.full_name || user.email}
-                </span>
-                <button
-                  onClick={() => signOut()}
-                  className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition-colors text-sm"
+    <nav className="bg-white shadow-sm border-b">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
+          <Link href="/" className="text-2xl font-bold text-blue-600">
+            ResuMaker
+          </Link>
+          
+          <div className="flex items-center space-x-6">
+            {user ? (
+              <>
+                <Link 
+                  href="/create" 
+                  className="text-gray-700 hover:text-blue-600 transition-colors"
                 >
-                  Sign Out
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/auth"
-                className={`font-medium ${isActive('/auth')}`}
+                  Create
+                </Link>
+                <Link 
+                  href="/upload" 
+                  className="text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  Upload
+                </Link>
+                <Link 
+                  href="/tailor" 
+                  className="text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  Tailor
+                </Link>
+                <div className="flex items-center space-x-2">
+                  <FiUser className="h-5 w-5 text-gray-600" />
+                  <span className="text-gray-700">{user.email}</span>
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center text-gray-600 hover:text-red-600 transition-colors ml-2"
+                    title="Sign out"
+                  >
+                    <FiLogOut className="h-5 w-5" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <Link 
+                href="/auth" 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
               >
                 Sign In
               </Link>
-              <Link
-                href="/auth"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Get Started
-              </Link>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </nav>

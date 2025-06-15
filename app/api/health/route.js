@@ -13,8 +13,8 @@ export async function GET() {
 
     // Check critical environment variables
     const requiredEnvVars = [
-      'GOOGLE_AI_API_KEY',
-      'NEXTAUTH_SECRET'
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY'
     ];
 
     const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);

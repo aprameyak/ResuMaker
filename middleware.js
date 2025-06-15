@@ -1,36 +1,35 @@
-import { withAuth } from "next-auth/middleware"
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { NextResponse } from 'next/server';
 
-export default withAuth(
-  function middleware(req) {
-    // Add any additional middleware logic here
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        // Temporarily allow all routes to avoid redirect loops
-        // This will be updated once environment variables are properly configured
-        return true;
-        
-        // Original logic (commented out for now):
-        // const publicPaths = [
-        //   '/',
-        //   '/api/parse-resume',
-        //   '/api/health',
-        //   '/api/webhooks',
-        //   '/auth/signin',
-        //   '/auth/error'
-        // ];
-        // 
-        // if (publicPaths.some(path => req.nextUrl.pathname.startsWith(path))) {
-        //   return true;
-        // }
-        // 
-        // return !!token;
-      },
-    },
+export async function middleware(req) {
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // Protected routes that require authentication
+  const protectedPaths = ['/create', '/upload', '/tailor'];
+  const isProtectedPath = protectedPaths.some(path => 
+    req.nextUrl.pathname.startsWith(path)
+  );
+
+  // If accessing protected route without session, redirect to auth
+  if (isProtectedPath && !session) {
+    return NextResponse.redirect(new URL('/auth', req.url));
   }
-)
+
+  // If accessing auth page with session, redirect to home
+  if (req.nextUrl.pathname === '/auth' && session) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  return res;
+}
 
 export const config = {
-  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }; 

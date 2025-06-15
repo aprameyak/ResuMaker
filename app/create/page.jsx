@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '../../contexts/AuthContext';
 import ResumeEditor from '../components/ResumeEditor';
 import ResumeTemplates from '../components/ResumeTemplates';
 import { SECTION_TYPES } from '../constants';
@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 export default function CreatePage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
   const [showTemplates, setShowTemplates] = useState(true);
   const [sections, setSections] = useState([
     {
@@ -26,10 +26,10 @@ export default function CreatePage() {
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (!loading && !user) {
       router.push('/auth');
     }
-  }, [status, router]);
+  }, [user, loading, router]);
 
   const handleSelectTemplate = (templateSections) => {
     setSections(templateSections);
@@ -56,7 +56,7 @@ export default function CreatePage() {
     setSections(sections.filter(s => s.id !== section.id));
   };
 
-  if (status === 'loading') {
+  if (loading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -64,7 +64,7 @@ export default function CreatePage() {
     );
   }
 
-  if (!session) {
+  if (!user) {
     return null;
   }
 
