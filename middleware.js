@@ -1,31 +1,20 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 
 export async function middleware(req) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
   // Protected routes that require authentication
   const protectedPaths = ['/create', '/upload', '/tailor'];
   const isProtectedPath = protectedPaths.some(path => 
     req.nextUrl.pathname.startsWith(path)
   );
 
-  // If accessing protected route without session, redirect to auth
-  if (isProtectedPath && !session) {
-    return NextResponse.redirect(new URL('/auth', req.url));
+  // For now, allow all requests to pass through
+  // Authentication will be handled client-side by the AuthContext
+  if (isProtectedPath) {
+    // Just pass through - let the client-side auth handle redirects
+    return NextResponse.next();
   }
 
-  // If accessing auth page with session, redirect to home
-  if (req.nextUrl.pathname === '/auth' && session) {
-    return NextResponse.redirect(new URL('/', req.url));
-  }
-
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {
