@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function AuthPage() {
@@ -14,8 +14,17 @@ export default function AuthPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, user } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo') || '/'
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) {
+      router.push(redirectTo)
+    }
+  }, [user, router, redirectTo])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -29,17 +38,26 @@ export default function AuthPage() {
           throw new Error('Passwords do not match')
         }
         
+        if (password.length < 6) {
+          throw new Error('Password must be at least 6 characters long')
+        }
+        
         await signUp(email, password, { full_name: fullName })
         setMessage('Check your email for the confirmation link!')
       } else {
         await signIn(email, password)
-        router.push('/')
+        router.push(redirectTo)
       }
     } catch (error) {
       setError(error.message)
     } finally {
       setLoading(false)
     }
+  }
+
+  // Don't render if user is already authenticated
+  if (user) {
+    return null
   }
 
   return (
@@ -52,7 +70,11 @@ export default function AuthPage() {
           <p className="mt-2 text-sm text-gray-600">
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                setIsSignUp(!isSignUp)
+                setError('')
+                setMessage('')
+              }}
               className="font-medium text-blue-600 hover:text-blue-500"
             >
               {isSignUp ? 'Sign in' : 'Sign up'}
@@ -96,12 +118,13 @@ export default function AuthPage() {
             
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                Password {isSignUp && <span className="text-xs text-gray-500">(min. 6 characters)</span>}
               </label>
               <input
                 id="password"
                 type="password"
                 required
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -118,6 +141,7 @@ export default function AuthPage() {
                   id="confirmPassword"
                   type="password"
                   required
+                  minLength={6}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
