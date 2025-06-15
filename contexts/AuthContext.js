@@ -1,8 +1,7 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { trackUserAction } from '../lib/userTracking'
+import { createContext, useContext } from 'react'
+import { useSession, signIn, signOut } from 'next-auth/react'
 
 const AuthContext = createContext({})
 
@@ -15,75 +14,47 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { data: session, status } = useSession()
+  const loading = status === 'loading'
+  const user = session?.user || null
 
-  useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      setLoading(false)
-    }
-
-    getInitialSession()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
-
-        // Track auth events
-        if (session?.user) {
-          await trackUserAction(session.user.id, `auth_${event}`)
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const signUp = async (email, password, metadata = {}) => {
-    const { data, error } = await supabase.auth.signUp({
+  const signInWithCredentials = async (email, password) => {
+    const result = await signIn('credentials', {
       email,
       password,
-      options: {
-        data: metadata
-      }
+      redirect: false
     })
     
-    if (error) throw error
-    return data
-  }
-
-  const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
+    if (result?.error) {
+      throw new Error(result.error)
+    }
     
-    if (error) throw error
-    return data
+    return result
   }
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+  const signInWithGoogle = async () => {
+    const result = await signIn('google', { redirect: false })
+    
+    if (result?.error) {
+      throw new Error(result.error)
+    }
+    
+    return result
   }
 
-  const resetPassword = async (email) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email)
-    if (error) throw error
+  const signOutUser = async () => {
+    await signOut({ redirect: false })
   }
 
   const value = {
     user,
     loading,
-    signUp,
-    signIn,
-    signOut,
-    resetPassword
+    signIn: signInWithCredentials,
+    signInWithGoogle,
+    signOut: signOutUser,
+    // Legacy compatibility
+    signUp: signInWithCredentials, // For now, map signUp to signIn
+    resetPassword: () => Promise.resolve() // Placeholder
   }
 
   return (
