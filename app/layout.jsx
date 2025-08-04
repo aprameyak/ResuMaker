@@ -3,6 +3,7 @@ import './globals.css';
 import Navigation from './components/Navigation';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from '../contexts/AuthContext';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -23,6 +24,7 @@ export default function RootLayout({ children }) {
             </main>
           </ErrorBoundary>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
