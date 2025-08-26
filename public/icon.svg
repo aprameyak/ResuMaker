@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="16" fill="#3B82F6"/>
+  
+  <!-- Document/Resume icon -->
+  <rect x="8" y="6" width="16" height="20" rx="2" fill="white"/>
+  
+  <!-- Document lines -->
+  <rect x="10" y="10" width="12" height="1.5" rx="0.75" fill="#3B82F6"/>
+  <rect x="10" y="13" width="10" height="1.5" rx="0.75" fill="#3B82F6"/>
+  <rect x="10" y="16" width="11" height="1.5" rx="0.75" fill="#3B82F6"/>
+  <rect x="10" y="19" width="8" height="1.5" rx="0.75" fill="#3B82F6"/>
+  
+  <!-- AI/Magic sparkle -->
+  <path d="M22 8L23 7L22 6L21 7L22 8Z" fill="#F59E0B"/>
+  <path d="M24 12L25 11L24 10L23 11L24 12Z" fill="#F59E0B"/>
+  <path d="M20 12L21 11L20 10L19 11L20 12Z" fill="#F59E0B"/>
+  
+  <!-- Document fold -->
+  <path d="M24 6L26 8L24 10V6Z" fill="#E5E7EB"/>
+</svg>

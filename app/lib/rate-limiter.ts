@@ -1,14 +1,27 @@
 import { LRUCache } from 'lru-cache';
 
+interface RateLimitResult {
+  success: boolean;
+  remaining: number;
+  resetTime: number;
+}
+
+interface RateLimitHeaders {
+  'X-RateLimit-Limit': string;
+  'X-RateLimit-Remaining': string;
+  'X-RateLimit-Reset': string;
+  [key: string]: string;
+}
+
 // Create a cache for rate limiting
-const cache = new LRUCache({
+const cache = new LRUCache<string, number>({
   max: 500, // Maximum number of entries
   ttl: 60 * 1000, // 1 minute TTL
 });
 
 const RATE_LIMIT_REQUESTS = parseInt(process.env.NEXT_PUBLIC_MAX_REQUESTS_PER_MINUTE || '10', 10);
 
-export function rateLimit(identifier) {
+export function rateLimit(identifier: string): RateLimitResult {
   const key = `rate_limit_${identifier}`;
   const current = cache.get(key) || 0;
   
@@ -29,10 +42,10 @@ export function rateLimit(identifier) {
   };
 }
 
-export function getRateLimitHeaders(result) {
+export function getRateLimitHeaders(result: RateLimitResult): RateLimitHeaders {
   return {
     'X-RateLimit-Limit': RATE_LIMIT_REQUESTS.toString(),
     'X-RateLimit-Remaining': result.remaining.toString(),
     'X-RateLimit-Reset': new Date(result.resetTime).toISOString(),
   };
-} 
+}

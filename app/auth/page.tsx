@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, FormEvent, ChangeEvent } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -8,14 +8,14 @@ import { useAuth } from '../../contexts/AuthContext'
 export const dynamic = 'force-dynamic'
 
 function AuthForm() {
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
+  const [isSignUp, setIsSignUp] = useState<boolean>(false)
+  const [email, setEmail] = useState<string>('')
+  const [password, setPassword] = useState<string>('')
+  const [confirmPassword, setConfirmPassword] = useState<string>('')
+  const [fullName, setFullName] = useState<string>('')
+  const [loading, setLoading] = useState<boolean>(false)
+  const [message, setMessage] = useState<string>('')
+  const [error, setError] = useState<string>('')
 
   const { signIn, signUp, user } = useAuth()
   const router = useRouter()
@@ -29,7 +29,7 @@ function AuthForm() {
     }
   }, [user, router, redirectTo])
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setError('')
@@ -52,7 +52,7 @@ function AuthForm() {
         router.push(redirectTo)
       }
     } catch (error) {
-      setError(error.message)
+      setError((error as Error).message)
     } finally {
       setLoading(false)
     }
@@ -97,7 +97,7 @@ function AuthForm() {
                   type="text"
                   required
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Full name"
                 />
@@ -113,7 +113,7 @@ function AuthForm() {
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Email address"
               />
@@ -129,7 +129,7 @@ function AuthForm() {
                 required
                 minLength={6}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Password"
               />
@@ -146,7 +146,7 @@ function AuthForm() {
                   required
                   minLength={6}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Confirm password"
                 />
@@ -191,4 +191,4 @@ export default function AuthPage() {
       <AuthForm />
     </Suspense>
   )
-} 
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { FiUpload, FiTarget, FiDownload } from 'react-icons/fi';
@@ -11,11 +11,11 @@ export const dynamic = 'force-dynamic';
 export default function TailorPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [resume, setResume] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
-  const [tailoredResume, setTailoredResume] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState('');
+  const [resume, setResume] = useState<string>('');
+  const [jobDescription, setJobDescription] = useState<string>('');
+  const [tailoredResume, setTailoredResume] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -97,7 +97,7 @@ export default function TailorPage() {
             </div>
             <textarea
               value={resume}
-              onChange={(e) => setResume(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setResume(e.target.value)}
               placeholder="Paste your current resume content here..."
               className="w-full h-64 p-4 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -110,7 +110,7 @@ export default function TailorPage() {
             </div>
             <textarea
               value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setJobDescription(e.target.value)}
               placeholder="Paste the job description you're applying for..."
               className="w-full h-64 p-4 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -163,4 +163,4 @@ export default function TailorPage() {
       </div>
     </div>
   );
-} 
+}

@@ -1,8 +1,20 @@
 // Simple stub functions for user tracking (no database backend)
 // These functions provide the same interface but don't actually persist data
 
+interface UserStats {
+  resumeCount: number;
+  actionCounts: Record<string, number>;
+  totalActions: number;
+}
+
+interface UserProfile {
+  id: string;
+  [key: string]: any;
+  updated_at: string;
+}
+
 // Track user actions for analytics
-export async function trackUserAction(userId, action, metadata = {}) {
+export async function trackUserAction(userId: string, action: string, metadata: Record<string, any> = {}): Promise<void> {
   try {
     console.log('User action tracked:', { userId, action, metadata, timestamp: new Date().toISOString() })
     return Promise.resolve()
@@ -12,7 +24,7 @@ export async function trackUserAction(userId, action, metadata = {}) {
 }
 
 // Get user statistics
-export async function getUserStats(userId) {
+export async function getUserStats(userId: string): Promise<UserStats> {
   try {
     return {
       resumeCount: 0,
@@ -26,7 +38,7 @@ export async function getUserStats(userId) {
 }
 
 // Update user profile
-export async function updateUserProfile(userId, updates) {
+export async function updateUserProfile(userId: string, updates: Record<string, any>): Promise<UserProfile> {
   try {
     console.log('User profile update:', { userId, updates })
     return {
@@ -38,4 +50,4 @@ export async function updateUserProfile(userId, updates) {
     console.error('Error updating user profile:', error)
     throw error
   }
-} 
+}

@@ -5,17 +5,24 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import ResumeEditor from '../components/ResumeEditor';
 import ResumeTemplates from '../components/ResumeTemplates';
-import { SECTION_TYPES } from '../constants';
+import { SECTION_TYPES, SectionType } from '../constants';
 import { FiHelpCircle } from 'react-icons/fi';
 
 // Force dynamic rendering for auth-protected pages
 export const dynamic = 'force-dynamic';
 
+interface Section {
+  id: string;
+  type: SectionType;
+  title: string;
+  content: string;
+}
+
 export default function CreatePage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [showTemplates, setShowTemplates] = useState(true);
-  const [sections, setSections] = useState([
+  const [showTemplates, setShowTemplates] = useState<boolean>(true);
+  const [sections, setSections] = useState<Section[]>([
     {
       id: '1',
       type: SECTION_TYPES.SUMMARY,
@@ -23,7 +30,7 @@ export default function CreatePage() {
       content: ''
     }
   ]);
-  const [showHelp, setShowHelp] = useState(false);
+  const [showHelp, setShowHelp] = useState<boolean>(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -31,19 +38,19 @@ export default function CreatePage() {
     }
   }, [user, loading, router]);
 
-  const handleSelectTemplate = (templateSections) => {
+  const handleSelectTemplate = (templateSections: Section[]) => {
     setSections(templateSections);
     setShowTemplates(false);
   };
 
-  const handleUpdate = (section, content) => {
+  const handleUpdate = (section: Section, content: string) => {
     setSections(sections.map(s => 
       s.id === section.id ? { ...s, content } : s
     ));
   };
 
-  const handleAdd = (type) => {
-    const newSection = {
+  const handleAdd = (type: SectionType) => {
+    const newSection: Section = {
       id: Date.now().toString(),
       type,
       title: type.charAt(0).toUpperCase() + type.slice(1),
@@ -52,7 +59,7 @@ export default function CreatePage() {
     setSections([...sections, newSection]);
   };
 
-  const handleDelete = (section) => {
+  const handleDelete = (section: Section) => {
     setSections(sections.filter(s => s.id !== section.id));
   };
 
@@ -126,4 +133,4 @@ export default function CreatePage() {
       </div>
     </div>
   );
-} 
+}

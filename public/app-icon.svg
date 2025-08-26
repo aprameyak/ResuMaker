@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#3B82F6"/>
+  
+  <!-- Document/Resume icon -->
+  <rect x="128" y="96" width="256" height="320" rx="32" fill="white"/>
+  
+  <!-- Document lines -->
+  <rect x="160" y="160" width="192" height="24" rx="12" fill="#3B82F6"/>
+  <rect x="160" y="208" width="160" height="24" rx="12" fill="#3B82F6"/>
+  <rect x="160" y="256" width="176" height="24" rx="12" fill="#3B82F6"/>
+  <rect x="160" y="304" width="128" height="24" rx="12" fill="#3B82F6"/>
+  <rect x="160" y="352" width="144" height="24" rx="12" fill="#3B82F6"/>
+  
+  <!-- AI/Magic sparkle -->
+  <path d="M352 128L368 112L352 96L336 112L352 128Z" fill="#F59E0B"/>
+  <path d="M384 192L400 176L384 160L368 176L384 192Z" fill="#F59E0B"/>
+  <path d="M320 192L336 176L320 160L304 176L320 192Z" fill="#F59E0B"/>
+  <path d="M352 224L368 208L352 192L336 208L352 224Z" fill="#F59E0B"/>
+  
+  <!-- Document fold -->
+  <path d="M384 96L416 128L384 160V96Z" fill="#E5E7EB"/>
+</svg>

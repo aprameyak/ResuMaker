@@ -1,20 +1,29 @@
 'use client';
 
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { Component, ReactNode, ErrorInfo } from 'react';
 
-class ErrorBoundary extends React.Component {
-  constructor(props) {
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+}
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     // Update state so the next render will show the fallback UI
     return { hasError: true };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
       console.error('Error caught by boundary:', error, errorInfo);
@@ -53,7 +62,7 @@ class ErrorBoundary extends React.Component {
                 </summary>
                 <pre className="mt-2 text-xs text-red-600 bg-red-50 p-4 rounded overflow-auto">
                   {this.state.error.toString()}
-                  {this.state.errorInfo.componentStack}
+                  {this.state.errorInfo?.componentStack}
                 </pre>
               </details>
             )}
@@ -66,8 +75,4 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-ErrorBoundary.propTypes = {
-  children: PropTypes.node.isRequired,
-};
-
-export default ErrorBoundary; 
+export default ErrorBoundary;

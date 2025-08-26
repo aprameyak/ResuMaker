@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+interface HealthResponse {
+  status: string;
+  timestamp: string;
+  uptime?: number;
+  environment?: string;
+  version?: string;
+  error?: string;
+  missing?: string[];
+}
+
+export async function GET(): Promise<NextResponse<HealthResponse>> {
   try {
     // Basic health check
-    const health = {
+    const health: HealthResponse = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -36,10 +46,10 @@ export async function GET() {
     return NextResponse.json(
       {
         status: 'unhealthy',
-        error: error.message,
+        error: (error as Error).message,
         timestamp: new Date().toISOString(),
       },
       { status: 503 }
     );
   }
-} 
+}

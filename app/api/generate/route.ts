@@ -10,10 +10,23 @@ const requestSchema = z.object({
   type: z.string()
 });
 
+interface Suggestion {
+  original: string;
+  suggestion: string;
+  explanation: string;
+  type: 'improvement' | 'correction' | 'enhancement';
+}
+
+interface GenerateResponse {
+  status: string;
+  data?: Suggestion[];
+  error?: string;
+}
+
 const genAI = new GoogleGenerativeAI(ENV_VARS.GOOGLE_AI_API_KEY || '');
 const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-export async function POST(request) {
+export async function POST(request: Request): Promise<NextResponse<GenerateResponse>> {
   try {
     // Rate limiting
     const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -66,12 +79,13 @@ export async function POST(request) {
     const text = response.text();
     
     // Parse the response text as JSON array of suggestions
-    let suggestions;
+    let suggestions: Suggestion[];
     try {
-      suggestions = JSON.parse(text);
-      if (!Array.isArray(suggestions)) {
+      const parsed = JSON.parse(text);
+      if (!Array.isArray(parsed)) {
         throw new Error('Response is not an array');
       }
+      suggestions = parsed as Suggestion[];
     } catch (error) {
       console.error('Failed to parse AI response:', error);
       return NextResponse.json(
@@ -99,4 +113,4 @@ export async function POST(request) {
       { status: 500 }
     );
   }
-} 
+}

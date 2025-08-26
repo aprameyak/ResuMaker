@@ -1,12 +1,22 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { trackUserAction } from '../lib/userTracking'
+import { User } from '@supabase/supabase-js'
 
-const AuthContext = createContext({})
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<any>;
+  signIn: (email: string, password: string) => Promise<any>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+}
 
-export const useAuth = () => {
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext)
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider')
@@ -14,9 +24,13 @@ export const useAuth = () => {
   return context
 }
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
     const getInitialSession = async () => {
@@ -41,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signUp = async (email, password, metadata = {}) => {
+  const signUp = async (email: string, password: string, metadata: Record<string, any> = {}) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -55,7 +69,7 @@ export const AuthProvider = ({ children }) => {
     return data
   }
 
-  const signIn = async (email, password) => {
+  const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -70,14 +84,14 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error
   }
 
-  const resetPassword = async (email) => {
+  const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/callback`
     })
     if (error) throw error
   }
 
-  const value = {
+  const value: AuthContextType = {
     user,
     loading,
     signUp,
@@ -91,4 +105,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   )
-} 
+}

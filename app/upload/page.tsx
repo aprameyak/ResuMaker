@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { FiUpload, FiFile, FiX } from 'react-icons/fi';
@@ -8,13 +8,18 @@ import { FiUpload, FiFile, FiX } from 'react-icons/fi';
 // Force dynamic rendering for auth-protected pages
 export const dynamic = 'force-dynamic';
 
+interface ParsedData {
+  // Add specific properties based on your API response
+  [key: string]: any;
+}
+
 export default function UploadPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [parsedData, setParsedData] = useState(null);
-  const [error, setError] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [parsedData, setParsedData] = useState<ParsedData | null>(null);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -22,8 +27,8 @@ export default function UploadPage() {
     }
   }, [user, loading, router]);
 
-  const handleFileSelect = (event) => {
-    const selectedFile = event.target.files[0];
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
     if (selectedFile) {
       if (selectedFile.type === 'application/pdf' || selectedFile.name.endsWith('.pdf')) {
         setFile(selectedFile);
@@ -179,4 +184,4 @@ export default function UploadPage() {
       </div>
     </div>
   );
-} 
+}
