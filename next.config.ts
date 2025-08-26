@@ -2,7 +2,6 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   poweredByHeader: false,
   compress: true,
 
@@ -18,7 +17,7 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60,
     formats: ['image/webp', 'image/avif'],
   },
-  optimizeFonts: true,
+
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

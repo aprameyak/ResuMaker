@@ -11,7 +11,7 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig: Linter.Config[] = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...compat.extends("next/core-web-vitals"),
 ];
 
 export default eslintConfig;
