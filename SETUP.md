@@ -16,7 +16,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3001
 NODE_ENV=development
 
 # Database Configuration (Required)
-DATABASE_URL="postgresql://neondb_owner:npg_Ldx3HjY9vzNr@ep-weathered-salad-adbwtuy8-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+DATABASE_URL="postgresql://username:password@host/database?sslmode=require&channel_binding=require"
 
 # JWT Configuration (Required for authentication)
 # Generate a secure random string (minimum 32 characters)

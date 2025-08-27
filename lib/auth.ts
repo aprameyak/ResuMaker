@@ -2,11 +2,21 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { prisma } from './database'
 
-const JWT_SECRET = process.env.JWT_SECRET!
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-build-only'
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
 
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required')
+// Only throw error at runtime, not build time
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required')
+  }
+  return secret
+}
+
+interface JWTPayloadData {
+  userId: string
+  email: string
 }
 
 export interface JWTPayload {
@@ -36,14 +46,14 @@ export const auth = {
   },
 
   // Generate JWT token
-  generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
+  generateToken(payload: JWTPayloadData): string {
+    return jwt.sign(payload, getJwtSecret(), { expiresIn: '7d' })
   },
 
   // Verify JWT token
   verifyToken(token: string): JWTPayload {
     try {
-      return jwt.verify(token, JWT_SECRET) as JWTPayload
+      return jwt.verify(token, getJwtSecret()) as JWTPayload
     } catch (error) {
       throw new AuthError('Invalid or expired token', 401)
     }

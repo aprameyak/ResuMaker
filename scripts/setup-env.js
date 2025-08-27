@@ -25,7 +25,7 @@ NODE_ENV=development
 
 # Database Configuration (Required)
 # Replace with your actual Neon PostgreSQL connection string
-DATABASE_URL="postgresql://neondb_owner:npg_Ldx3HjY9vzNr@ep-weathered-salad-adbwtuy8-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+DATABASE_URL="postgresql://username:password@host/database?sslmode=require&channel_binding=require"
 
 # JWT Configuration (Required for authentication)
 # This secret was generated automatically - keep it secure!

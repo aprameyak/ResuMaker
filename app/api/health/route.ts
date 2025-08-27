@@ -23,8 +23,8 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
 
     // Check critical environment variables
     const requiredEnvVars = [
-      'NEXT_PUBLIC_SUPABASE_URL',
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY'
+      'DATABASE_URL',
+      'JWT_SECRET'
     ];
 
     const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
