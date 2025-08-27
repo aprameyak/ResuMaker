@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 import { FiUser, FiLogOut } from 'react-icons/fi';
+import Logo from './Logo';
 
 export default function Navigation() {
   const { user, signOut } = useAuth();
@@ -19,8 +20,8 @@ export default function Navigation() {
     <nav className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="text-2xl font-bold text-blue-600">
-            ResuMaker
+          <Link href="/" className="flex items-center">
+            <Logo size="md" />
           </Link>
           
           <div className="flex items-center space-x-6">

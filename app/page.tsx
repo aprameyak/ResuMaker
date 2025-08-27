@@ -1,10 +1,14 @@
 import Link from 'next/link';
+import Logo from './components/Logo';
 
 export default function Home() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center py-12">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex mb-8">
-        <h1 className="text-4xl font-bold">Welcome to ResuMaker</h1>
+        <div className="flex flex-col items-center">
+          <Logo size="lg" className="mb-4" />
+          <h1 className="text-4xl font-bold text-center">Welcome to ResuMaker</h1>
+        </div>
       </div>
 
       <div className="grid text-center lg:max-w-5xl lg:w-full lg:grid-cols-3 lg:text-left gap-6">

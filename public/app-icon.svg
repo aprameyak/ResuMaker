@@ -1,23 +1,57 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background circle -->
-  <circle cx="256" cy="256" r="256" fill="#3B82F6"/>
+  <!-- Background gradient circle -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="docGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F8FAFC;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="aiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D97706;stop-opacity:1" />
+    </linearGradient>
+  </defs>
   
-  <!-- Document/Resume icon -->
-  <rect x="128" y="96" width="256" height="320" rx="32" fill="white"/>
+  <!-- Background circle with gradient -->
+  <circle cx="256" cy="256" r="256" fill="url(#bgGradient)"/>
   
-  <!-- Document lines -->
-  <rect x="160" y="160" width="192" height="24" rx="12" fill="#3B82F6"/>
-  <rect x="160" y="208" width="160" height="24" rx="12" fill="#3B82F6"/>
-  <rect x="160" y="256" width="176" height="24" rx="12" fill="#3B82F6"/>
-  <rect x="160" y="304" width="128" height="24" rx="12" fill="#3B82F6"/>
-  <rect x="160" y="352" width="144" height="24" rx="12" fill="#3B82F6"/>
+  <!-- Main document/Resume -->
+  <rect x="128" y="96" width="256" height="320" rx="24" fill="url(#docGradient)" stroke="#E2E8F0" stroke-width="2"/>
   
-  <!-- AI/Magic sparkle -->
-  <path d="M352 128L368 112L352 96L336 112L352 128Z" fill="#F59E0B"/>
-  <path d="M384 192L400 176L384 160L368 176L384 192Z" fill="#F59E0B"/>
-  <path d="M320 192L336 176L320 160L304 176L320 192Z" fill="#F59E0B"/>
-  <path d="M352 224L368 208L352 192L336 208L352 224Z" fill="#F59E0B"/>
+  <!-- Document header section -->
+  <rect x="144" y="112" width="224" height="48" rx="12" fill="#3B82F6" opacity="0.1"/>
+  <rect x="160" y="128" width="192" height="16" rx="8" fill="#3B82F6"/>
   
-  <!-- Document fold -->
+  <!-- Document content lines -->
+  <rect x="160" y="176" width="192" height="12" rx="6" fill="#64748B"/>
+  <rect x="160" y="200" width="160" height="12" rx="6" fill="#64748B"/>
+  <rect x="160" y="224" width="176" height="12" rx="6" fill="#64748B"/>
+  <rect x="160" y="248" width="128" height="12" rx="6" fill="#64748B"/>
+  <rect x="160" y="272" width="144" height="12" rx="6" fill="#64748B"/>
+  <rect x="160" y="296" width="168" height="12" rx="6" fill="#64748B"/>
+  <rect x="160" y="320" width="136" height="12" rx="6" fill="#64748B"/>
+  <rect x="160" y="344" width="152" height="12" rx="6" fill="#64748B"/>
+  
+  <!-- AI/Technology elements -->
+  <!-- Circuit board pattern -->
+  <path d="M352 128L368 112L352 96L336 112L352 128Z" fill="url(#aiGradient)"/>
+  <path d="M384 192L400 176L384 160L368 176L384 192Z" fill="url(#aiGradient)"/>
+  <path d="M320 192L336 176L320 160L304 176L320 192Z" fill="url(#aiGradient)"/>
+  <path d="M352 224L368 208L352 192L336 208L352 224Z" fill="url(#aiGradient)"/>
+  
+  <!-- AI brain/neural network dots -->
+  <circle cx="384" cy="144" r="4" fill="#10B981"/>
+  <circle cx="400" cy="160" r="3" fill="#10B981"/>
+  <circle cx="376" cy="176" r="3" fill="#10B981"/>
+  <circle cx="392" cy="192" r="4" fill="#10B981"/>
+  
+  <!-- Document fold with shadow -->
   <path d="M384 96L416 128L384 160V96Z" fill="#E5E7EB"/>
+  <path d="M384 96L416 128L384 160V96Z" fill="url(#docGradient)" opacity="0.8"/>
+  
+  <!-- Subtle shadow for depth -->
+  <ellipse cx="256" cy="480" rx="200" ry="32" fill="#000000" opacity="0.1"/>
 </svg>
