@@ -18,55 +18,135 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          <Link href="/" className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
+    <nav style={{
+      backgroundColor: 'white',
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+      borderBottom: '1px solid #e5e7eb',
+      position: 'sticky',
+      top: 0,
+      zIndex: 50
+    }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '0 16px'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          height: '64px'
+        }}>
+          <Link href="/" style={{
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#2563eb',
+            textDecoration: 'none'
+          }}>
             ResuMaker
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div style={{ display: 'none', alignItems: 'center', gap: '32px' }} className="desktop-nav">
             {user ? (
               <>
                 <Link 
                   href="/create" 
-                  className="nav-link font-medium"
+                  style={{
+                    color: '#6b7280',
+                    textDecoration: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: '500'
+                  }}
                 >
                   Create
                 </Link>
                 <Link 
                   href="/upload" 
-                  className="nav-link font-medium"
+                  style={{
+                    color: '#6b7280',
+                    textDecoration: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: '500'
+                  }}
                 >
                   Upload
                 </Link>
                 <Link 
                   href="/tailor" 
-                  className="nav-link font-medium"
+                  style={{
+                    color: '#6b7280',
+                    textDecoration: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: '500'
+                  }}
                 >
                   Tailor
                 </Link>
-                <div className="flex items-center space-x-3 ml-4 pl-4 border-l border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <FiUser className="h-4 w-4 text-blue-600" />
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginLeft: '16px',
+                  paddingLeft: '16px',
+                  borderLeft: '1px solid #e5e7eb'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: '#dbeafe',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <FiUser style={{ width: '16px', height: '16px', color: '#2563eb' }} />
                     </div>
-                    <span className="text-gray-700 font-medium">{user.email}</span>
+                    <span style={{ color: '#374151', fontWeight: '500' }}>{user.email}</span>
                   </div>
                   <button
                     onClick={handleSignOut}
-                    className="flex items-center text-gray-600 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: '#6b7280',
+                      border: 'none',
+                      background: 'none',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}
                     title="Sign out"
                   >
-                    <FiLogOut className="h-5 w-5" />
+                    <FiLogOut style={{ width: '20px', height: '20px' }} />
                   </button>
                 </div>
               </>
             ) : (
               <Link 
                 href="/auth" 
-                className="btn-primary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  color: 'white',
+                  backgroundColor: '#4f46e5',
+                  border: '1px solid transparent',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  cursor: 'pointer'
+                }}
               >
                 Sign In
               </Link>
@@ -74,57 +154,111 @@ export default function Navigation() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div style={{ display: 'block' }} className="mobile-nav">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100"
+              style={{
+                color: '#6b7280',
+                border: 'none',
+                background: 'none',
+                padding: '8px',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
             >
-              {isMenuOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
+              {isMenuOpen ? <FiX style={{ width: '24px', height: '24px' }} /> : <FiMenu style={{ width: '24px', height: '24px' }} />}
             </button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4">
+          <div style={{
+            borderTop: '1px solid #e5e7eb',
+            padding: '16px 0'
+          }}>
             {user ? (
-              <div className="space-y-4">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <Link 
                   href="/create" 
-                  className="block nav-link font-medium"
+                  style={{
+                    display: 'block',
+                    color: '#6b7280',
+                    textDecoration: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: '500'
+                  }}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Create
                 </Link>
                 <Link 
                   href="/upload" 
-                  className="block nav-link font-medium"
+                  style={{
+                    display: 'block',
+                    color: '#6b7280',
+                    textDecoration: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: '500'
+                  }}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Upload
                 </Link>
                 <Link 
                   href="/tailor" 
-                  className="block nav-link font-medium"
+                  style={{
+                    display: 'block',
+                    color: '#6b7280',
+                    textDecoration: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: '500'
+                  }}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Tailor
                 </Link>
-                <div className="pt-4 border-t border-gray-200">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <FiUser className="h-4 w-4 text-blue-600" />
+                <div style={{ paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: '#dbeafe',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <FiUser style={{ width: '16px', height: '16px', color: '#2563eb' }} />
                     </div>
-                    <span className="text-gray-700 font-medium">{user.email}</span>
+                    <span style={{ color: '#374151', fontWeight: '500' }}>{user.email}</span>
                   </div>
                   <button
                     onClick={() => {
                       handleSignOut();
                       setIsMenuOpen(false);
                     }}
-                    className="flex items-center text-gray-600 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-gray-100 w-full"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: '#6b7280',
+                      border: 'none',
+                      background: 'none',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      width: '100%'
+                    }}
                   >
-                    <FiLogOut className="h-5 w-5 mr-2" />
+                    <FiLogOut style={{ width: '20px', height: '20px', marginRight: '8px' }} />
                     Sign Out
                   </button>
                 </div>
@@ -132,7 +266,22 @@ export default function Navigation() {
             ) : (
               <Link 
                 href="/auth" 
-                className="btn-primary w-full text-center"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  color: 'white',
+                  backgroundColor: '#4f46e5',
+                  border: '1px solid transparent',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'center'
+                }}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Sign In
@@ -141,6 +290,17 @@ export default function Navigation() {
           </div>
         )}
       </div>
+      
+      <style jsx>{`
+        @media (min-width: 768px) {
+          .desktop-nav {
+            display: flex !important;
+          }
+          .mobile-nav {
+            display: none !important;
+          }
+        }
+      `}</style>
     </nav>
   );
 }

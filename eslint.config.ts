@@ -12,6 +12,21 @@ const compat = new FlatCompat({
 
 const eslintConfig: Linter.Config[] = [
   ...compat.extends("next/core-web-vitals"),
+  {
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: "module",
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+    rules: {
+      // Add any custom rules here
+    },
+  },
 ];
 
 export default eslintConfig;
