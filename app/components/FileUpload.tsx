@@ -1,11 +1,14 @@
 import React, { useCallback } from 'react';
-import PropTypes from 'prop-types';
 import { useDropzone } from 'react-dropzone';
 import { motion } from 'framer-motion';
 import { FiUpload } from 'react-icons/fi';
 
-const FileUpload = ({ onUpload }) => {
-  const onDrop = useCallback(async (acceptedFiles) => {
+interface FileUploadProps {
+  onUpload: (content: string) => void;
+}
+
+const FileUpload: React.FC<FileUploadProps> = ({ onUpload }) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
 
@@ -32,22 +35,42 @@ const FileUpload = ({ onUpload }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full"
+      style={{ width: '100%' }}
     >
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-          isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-500'
-        }`}
+        style={{
+          border: `2px dashed ${isDragActive ? '#2563eb' : '#d1d5db'}`,
+          borderRadius: '12px',
+          padding: '32px',
+          textAlign: 'center',
+          cursor: 'pointer',
+          backgroundColor: isDragActive ? '#eff6ff' : 'white',
+          transition: 'all 0.2s'
+        }}
       >
         <input {...getInputProps()} />
-        <FiUpload className="w-12 h-12 mx-auto text-gray-400" />
-        <p className="mt-2 text-sm text-gray-600">
+        <FiUpload style={{
+          width: '48px',
+          height: '48px',
+          margin: '0 auto 16px auto',
+          color: '#9ca3af',
+          display: 'block'
+        }} />
+        <p style={{
+          marginTop: '8px',
+          fontSize: '14px',
+          color: '#4b5563'
+        }}>
           {isDragActive
             ? 'Drop your resume here'
             : 'Drag and drop your resume, or click to select'}
         </p>
-        <p className="mt-1 text-xs text-gray-500">
+        <p style={{
+          marginTop: '4px',
+          fontSize: '12px',
+          color: '#6b7280'
+        }}>
           Supported formats: PDF, DOC, DOCX, TXT
         </p>
       </div>
@@ -55,8 +78,4 @@ const FileUpload = ({ onUpload }) => {
   );
 };
 
-FileUpload.propTypes = {
-  onUpload: PropTypes.func.isRequired
-};
-
-export default FileUpload; 
+export default FileUpload;

@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
-import { ENV_VARS, API_RESPONSE, REQUEST_SCHEMA } from '../../constants';
+import { ENV_VARS, API_RESPONSE } from '../../constants';
 
 // Move API key check to initialization
 if (!ENV_VARS.GOOGLE_AI_API_KEY) {
@@ -16,7 +16,14 @@ const requestSchema = z.object({
   content: z.string().min(1),
 });
 
-export async function POST(request) {
+interface Suggestion {
+  original: string;
+  suggestion: string;
+  explanation: string;
+  type: 'improvement' | 'correction' | 'enhancement';
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!ENV_VARS.GOOGLE_AI_API_KEY) {
     return NextResponse.json(
       { status: API_RESPONSE.ERROR, error: 'API configuration error' },
@@ -64,12 +71,13 @@ export async function POST(request) {
     const text = response.text();
     
     // Parse the response text as JSON array of suggestions
-    let suggestions;
+    let suggestions: Suggestion[];
     try {
-      suggestions = JSON.parse(text);
-      if (!Array.isArray(suggestions)) {
+      const parsed = JSON.parse(text);
+      if (!Array.isArray(parsed)) {
         throw new Error('Response is not an array');
       }
+      suggestions = parsed;
     } catch (error) {
       console.error('Failed to parse AI response:', error);
       return NextResponse.json(
@@ -94,4 +102,4 @@ export async function POST(request) {
       { status: 500 }
     );
   }
-} 
+}

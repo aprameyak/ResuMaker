@@ -1,12 +1,8 @@
-import { Inter } from 'next/font/google';
-import './globals.css';
 import Navigation from './components/Navigation';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from '../contexts/AuthContext';
-import { Analytics } from '@vercel/analytics/next';
 import { ReactNode } from 'react';
-
-const inter = Inter({ subsets: ['latin'] });
+import './globals.css';
 
 export const metadata = {
   title: 'ResuMaker - AI-Powered Resume Builder',
@@ -25,17 +21,38 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+    <html lang="en">
+      <head>
+        <style>{`
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f9fafb;
+            color: #111827;
+            line-height: 1.6;
+          }
+          
+          .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+          }
+        `}</style>
+      </head>
+      <body>
         <AuthProvider>
           <ErrorBoundary>
             <Navigation />
-            <main className="container mx-auto px-4 pt-4">
+            <main style={{ padding: '16px 0' }}>
               {children}
             </main>
           </ErrorBoundary>
         </AuthProvider>
-        <Analytics />
       </body>
     </html>
   );

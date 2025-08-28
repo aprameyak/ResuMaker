@@ -3,7 +3,7 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
-import { FiUpload, FiTarget, FiDownload } from 'react-icons/fi';
+import { FiUpload, FiTarget, FiDownload, FiArrowRight } from 'react-icons/fi';
 
 // Force dynamic rendering for auth-protected pages
 export const dynamic = 'force-dynamic';
@@ -70,8 +70,21 @@ export default function TailorPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          border: '4px solid #e5e7eb',
+          borderTop: '4px solid #2563eb',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
       </div>
     );
   }
@@ -81,56 +94,164 @@ export default function TailorPage() {
   }
 
   return (
-    <div className="flex flex-col items-center py-8">
-      <div className="w-full max-w-6xl">
-        <h1 className="text-4xl font-bold mb-8 text-center">Tailor Your Resume</h1>
-        <p className="text-gray-600 mb-8 text-center max-w-2xl mx-auto">
-          Optimize your resume for specific job opportunities. Our AI will analyze the job description 
-          and suggest improvements to better match the requirements.
-        </p>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
+      padding: '80px 16px 64px 16px'
+    }}>
+      <div style={{
+        maxWidth: '1280px',
+        margin: '0 auto'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#dbeafe',
+              borderRadius: '50%'
+            }}>
+              <FiTarget style={{ width: '48px', height: '48px', color: '#2563eb' }} />
+            </div>
+          </div>
+          <h1 style={{
+            fontSize: '48px',
+            fontWeight: 'bold',
+            color: '#111827',
+            marginBottom: '16px'
+          }}>
+            Tailor Your Resume
+          </h1>
+          <p style={{
+            fontSize: '20px',
+            color: '#4b5563',
+            maxWidth: '800px',
+            margin: '0 auto'
+          }}>
+            Optimize your resume for specific job opportunities. Our AI will analyze the job description 
+            and suggest improvements to better match the requirements.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center mb-4">
-              <FiUpload className="h-6 w-6 text-blue-600 mr-2" />
-              <h2 className="text-xl font-semibold">Your Resume</h2>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
+          gap: '32px',
+          marginBottom: '48px'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #f3f4f6',
+            padding: '32px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '24px'
+            }}>
+              <FiUpload style={{ width: '32px', height: '32px', color: '#2563eb', marginRight: '12px' }} />
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: '600',
+                color: '#111827'
+              }}>
+                Your Resume
+              </h2>
             </div>
             <textarea
               value={resume}
               onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setResume(e.target.value)}
               placeholder="Paste your current resume content here..."
-              className="w-full h-64 p-4 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              style={{
+                width: '100%',
+                height: '300px',
+                padding: '16px',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                resize: 'none',
+                fontSize: '16px',
+                lineHeight: '1.5',
+                fontFamily: 'inherit'
+              }}
             />
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center mb-4">
-              <FiTarget className="h-6 w-6 text-green-600 mr-2" />
-              <h2 className="text-xl font-semibold">Job Description</h2>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #f3f4f6',
+            padding: '32px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '24px'
+            }}>
+              <FiTarget style={{ width: '32px', height: '32px', color: '#16a34a', marginRight: '12px' }} />
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: '600',
+                color: '#111827'
+              }}>
+                Job Description
+              </h2>
             </div>
             <textarea
               value={jobDescription}
               onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setJobDescription(e.target.value)}
               placeholder="Paste the job description you're applying for..."
-              className="w-full h-64 p-4 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              style={{
+                width: '100%',
+                height: '300px',
+                padding: '16px',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                resize: 'none',
+                fontSize: '16px',
+                lineHeight: '1.5',
+                fontFamily: 'inherit'
+              }}
             />
           </div>
         </div>
 
-        <div className="flex justify-center mt-8">
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <button
             onClick={handleTailor}
             disabled={isProcessing || !resume.trim() || !jobDescription.trim()}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-md font-semibold transition-colors flex items-center"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px 40px',
+              fontSize: '20px',
+              fontWeight: '600',
+              color: 'white',
+              backgroundColor: isProcessing || !resume.trim() || !jobDescription.trim() ? '#9ca3af' : '#2563eb',
+              border: '1px solid transparent',
+              borderRadius: '12px',
+              cursor: isProcessing || !resume.trim() || !jobDescription.trim() ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.2s'
+            }}
           >
             {isProcessing ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  border: '3px solid #ffffff40',
+                  borderTop: '3px solid white',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  marginRight: '12px'
+                }}></div>
                 Processing...
               </>
             ) : (
               <>
-                <FiTarget className="mr-2" />
+                <FiTarget style={{ marginRight: '12px', width: '24px', height: '24px' }} />
                 Tailor Resume
               </>
             )}
@@ -138,25 +259,78 @@ export default function TailorPage() {
         </div>
 
         {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md max-w-2xl mx-auto">
-            <p className="text-red-600 text-center">{error}</p>
+          <div style={{
+            maxWidth: '600px',
+            margin: '0 auto 48px auto',
+            padding: '20px',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '12px'
+          }}>
+            <p style={{ color: '#dc2626', textAlign: 'center', fontSize: '16px' }}>{error}</p>
           </div>
         )}
 
         {tailoredResume && (
-          <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-green-600">Tailored Resume</h2>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #f3f4f6',
+            padding: '32px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '24px'
+            }}>
+              <h2 style={{
+                fontSize: '28px',
+                fontWeight: '600',
+                color: '#16a34a'
+              }}>
+                Tailored Resume
+              </h2>
               <button
                 onClick={handleDownload}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center transition-colors"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  color: 'white',
+                  backgroundColor: '#16a34a',
+                  border: '1px solid transparent',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
               >
-                <FiDownload className="mr-2" />
+                <FiDownload style={{ marginRight: '8px', width: '20px', height: '20px' }} />
                 Download
               </button>
             </div>
-            <div className="bg-gray-50 rounded-md p-4 max-h-96 overflow-y-auto">
-              <pre className="whitespace-pre-wrap text-sm">{tailoredResume}</pre>
+            <div style={{
+              backgroundColor: '#f9fafb',
+              borderRadius: '12px',
+              padding: '24px',
+              maxHeight: '400px',
+              overflowY: 'auto',
+              border: '1px solid #e5e7eb'
+            }}>
+              <pre style={{
+                whiteSpace: 'pre-wrap',
+                fontSize: '16px',
+                lineHeight: '1.6',
+                color: '#374151',
+                margin: 0,
+                fontFamily: 'inherit'
+              }}>
+                {tailoredResume}
+              </pre>
             </div>
           </div>
         )}

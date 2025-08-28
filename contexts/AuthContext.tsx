@@ -1,9 +1,14 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { supabase } from '../lib/supabase'
 import { trackUserAction } from '../lib/userTracking'
-import { User } from '@supabase/supabase-js'
+
+interface User {
+  id: string
+  email: string
+  name?: string | null
+  createdAt: string
+}
 
 interface AuthContextType {
   user: User | null;
@@ -34,61 +39,115 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      setLoading(false)
+      try {
+        const token = localStorage.getItem('auth_token')
+        if (token) {
+          const response = await fetch('/api/auth/verify', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          
+          if (response.ok) {
+            const { user } = await response.json()
+            setUser(user)
+          } else {
+            // Token is invalid, remove it
+            localStorage.removeItem('auth_token')
+          }
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error)
+        localStorage.removeItem('auth_token')
+      } finally {
+        setLoading(false)
+      }
     }
 
     getInitialSession()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
-
-        if (session?.user) {
-          await trackUserAction(session.user.id, `auth_${event}`)
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
   }, [])
 
   const signUp = async (email: string, password: string, metadata: Record<string, any> = {}) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: metadata,
-        emailRedirectTo: `${window.location.origin}/auth/callback`
-      }
+    const response = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        name: metadata.name
+      })
     })
+
+    const data = await response.json()
     
-    if (error) throw error
+    if (!response.ok) {
+      throw new Error(data.error || 'Signup failed')
+    }
+
+    // Store token and set user
+    localStorage.setItem('auth_token', data.token)
+    setUser(data.user)
+
+    // Track user action
+    if (data.user?.id) {
+      await trackUserAction(data.user.id, 'auth_signup')
+    }
+
     return data
   }
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
+    const response = await fetch('/api/auth/signin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
     })
+
+    const data = await response.json()
     
-    if (error) throw error
+    if (!response.ok) {
+      throw new Error(data.error || 'Signin failed')
+    }
+
+    // Store token and set user
+    localStorage.setItem('auth_token', data.token)
+    setUser(data.user)
+
+    // Track user action
+    if (data.user?.id) {
+      await trackUserAction(data.user.id, 'auth_signin')
+    }
+
     return data
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (token) {
+        await fetch('/api/auth/signout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error during signout:', error)
+    } finally {
+      // Always clear local state and token
+      localStorage.removeItem('auth_token')
+      setUser(null)
+    }
   }
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback`
-    })
-    if (error) throw error
+    // TODO: Implement password reset functionality
+    throw new Error('Password reset not yet implemented')
   }
 
   const value: AuthContextType = {

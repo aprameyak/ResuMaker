@@ -2,12 +2,32 @@
 
 import { useState } from 'react';
 import { FiBriefcase, FiFileText, FiCode, FiAward, FiStar } from 'react-icons/fi';
+import { SectionType } from '../constants';
 
-const TEMPLATES = [
+interface Section {
+  id: string;
+  type: SectionType;
+  title: string;
+  content: string;
+}
+
+interface Template {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+  description: string;
+  sections: Section[];
+}
+
+interface ResumeTemplatesProps {
+  onSelectTemplate: (sections: Section[]) => void;
+}
+
+const TEMPLATES: Template[] = [
   {
     id: 'professional',
     name: 'Professional',
-    icon: <FiBriefcase className="w-8 h-8 mb-2" />,
+    icon: <FiBriefcase style={{ width: '32px', height: '32px', marginBottom: '8px' }} />,
     description: 'Traditional format ideal for most industries and career levels',
     sections: [
       { id: 'summary', type: 'summary', title: 'Professional Summary', content: 'Experienced professional with a track record of...' },
@@ -19,7 +39,7 @@ const TEMPLATES = [
   {
     id: 'technical',
     name: 'Technical',
-    icon: <FiCode className="w-8 h-8 mb-2" />,
+    icon: <FiCode style={{ width: '32px', height: '32px', marginBottom: '8px' }} />,
     description: 'Specialized format highlighting technical skills and projects',
     sections: [
       { id: 'summary', type: 'summary', title: 'Technical Profile', content: 'Software engineer with expertise in...' },
@@ -32,7 +52,7 @@ const TEMPLATES = [
   {
     id: 'academic',
     name: 'Academic',
-    icon: <FiAward className="w-8 h-8 mb-2" />,
+    icon: <FiAward style={{ width: '32px', height: '32px', marginBottom: '8px' }} />,
     description: 'Format for recent graduates or academic positions',
     sections: [
       { id: 'summary', type: 'summary', title: 'Academic Profile', content: 'Recent graduate with focus on...' },
@@ -45,7 +65,7 @@ const TEMPLATES = [
   {
     id: 'minimalist',
     name: 'Minimalist',
-    icon: <FiStar className="w-8 h-8 mb-2" />,
+    icon: <FiStar style={{ width: '32px', height: '32px', marginBottom: '8px' }} />,
     description: 'Clean, concise format focusing on key achievements',
     sections: [
       { id: 'summary', type: 'summary', title: 'Profile', content: 'Concise statement about your career focus.' },
@@ -57,7 +77,7 @@ const TEMPLATES = [
   {
     id: 'executive',
     name: 'Executive',
-    icon: <FiFileText className="w-8 h-8 mb-2" />,
+    icon: <FiFileText style={{ width: '32px', height: '32px', marginBottom: '8px' }} />,
     description: 'Format for senior leaders highlighting leadership and results',
     sections: [
       { id: 'summary', type: 'summary', title: 'Executive Summary', content: 'Senior leader with proven track record of...' },
@@ -69,58 +89,120 @@ const TEMPLATES = [
   }
 ];
 
-export default function ResumeTemplates({ onSelectTemplate }) {
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
+export default function ResumeTemplates({ onSelectTemplate }: ResumeTemplatesProps) {
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
-  const handleSelectTemplate = (template) => {
+  const handleSelectTemplate = (template: Template) => {
     setSelectedTemplate(template.id);
     onSelectTemplate(template.sections);
   };
 
   return (
-    <div className="w-full">
-      <h2 className="text-2xl font-semibold mb-6">Choose a Template</h2>
-      <p className="text-gray-600 mb-6">
+    <div style={{ width: '100%' }}>
+      <h2 style={{
+        fontSize: '24px',
+        fontWeight: '600',
+        marginBottom: '24px',
+        color: '#111827'
+      }}>
+        Choose a Template
+      </h2>
+      <p style={{
+        color: '#4b5563',
+        marginBottom: '24px',
+        fontSize: '16px'
+      }}>
         Select a template to get started quickly. You can customize all sections later.
       </p>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '16px',
+        marginBottom: '32px'
+      }}>
         {TEMPLATES.map((template) => (
           <div
             key={template.id}
-            className={`border rounded-lg p-6 cursor-pointer transition-all ${
-              selectedTemplate === template.id
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-            }`}
+            style={{
+              border: selectedTemplate === template.id ? '2px solid #2563eb' : '1px solid #e5e7eb',
+              borderRadius: '12px',
+              padding: '24px',
+              cursor: 'pointer',
+              backgroundColor: selectedTemplate === template.id ? '#eff6ff' : 'white',
+              transition: 'all 0.2s'
+            }}
             onClick={() => handleSelectTemplate(template)}
           >
-            <div className="flex flex-col items-center text-center">
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center'
+            }}>
               {template.icon}
-              <h3 className="text-lg font-medium mb-2">{template.name}</h3>
-              <p className="text-sm text-gray-500">{template.description}</p>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '500',
+                marginBottom: '8px',
+                color: '#111827'
+              }}>
+                {template.name}
+              </h3>
+              <p style={{
+                fontSize: '14px',
+                color: '#6b7280'
+              }}>
+                {template.description}
+              </p>
             </div>
           </div>
         ))}
       </div>
       
-      <div className="mt-8 flex justify-end">
+      <div style={{
+        marginTop: '32px',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: '16px'
+      }}>
         <button
           onClick={() => handleSelectTemplate(TEMPLATES[0])}
-          className="px-4 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300 mr-4"
+          style={{
+            padding: '12px 24px',
+            backgroundColor: '#f3f4f6',
+            borderRadius: '8px',
+            color: '#374151',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: '500'
+          }}
         >
           Skip Template
         </button>
         <button
           disabled={!selectedTemplate}
-          onClick={() => handleSelectTemplate(TEMPLATES.find(t => t.id === selectedTemplate))}
-          className={`px-4 py-2 rounded-md text-white ${
-            selectedTemplate ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
-          }`}
+          onClick={() => {
+            const template = TEMPLATES.find(t => t.id === selectedTemplate);
+            if (template) {
+              handleSelectTemplate(template);
+            }
+          }}
+          style={{
+            padding: '12px 24px',
+            backgroundColor: selectedTemplate ? '#2563eb' : '#9ca3af',
+            borderRadius: '8px',
+            color: 'white',
+            border: 'none',
+            cursor: selectedTemplate ? 'pointer' : 'not-allowed',
+            fontSize: '16px',
+            fontWeight: '500'
+          }}
         >
           Use Template
         </button>
       </div>
     </div>
   );
-} 
+}

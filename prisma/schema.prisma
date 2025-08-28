@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  resumes   Resume[]
+  jobDescriptions JobDescription[]
+  userActions UserAction[]
+
+  @@map("users")
+}
+
+model Resume {
+  id          String   @id @default(cuid())
+  title       String
+  content     Json     // Store resume data as JSON
+  template    String   @default("modern")
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobDescriptions JobDescription[] @relation("ResumeJobDescription")
+
+  @@map("resumes")
+}
+
+model JobDescription {
+  id          String   @id @default(cuid())
+  title       String
+  company     String
+  description String
+  requirements String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumes     Resume[] @relation("ResumeJobDescription")
+
+  @@map("job_descriptions")
+}
+
+model UserAction {
+  id        String   @id @default(cuid())
+  action    String   // e.g., "auth_signin", "resume_created", etc.
+  metadata  Json?    // Additional action data
+  createdAt DateTime @default(now())
+  
+  // Relations
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_actions")
+}
+
+// Session management for JWT tokens
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@map("sessions")
+}
