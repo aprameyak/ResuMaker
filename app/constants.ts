@@ -4,7 +4,11 @@ export const SECTION_TYPES = {
   EXPERIENCE: 'experience',
   SKILLS: 'skills',
   PROJECTS: 'projects',
-  SUMMARY: 'summary'
+  SUMMARY: 'summary',
+  RESEARCH: 'research',
+  PUBLICATIONS: 'publications',
+  HIGHLIGHTS: 'highlights',
+  BOARD: 'board'
 } as const;
 
 export type SectionType = typeof SECTION_TYPES[keyof typeof SECTION_TYPES];
