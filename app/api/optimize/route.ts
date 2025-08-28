@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
 import { ENV_VARS, API_RESPONSE } from '../../constants';
@@ -14,10 +14,28 @@ const requestSchema = z.object({
   })
 });
 
+interface Keywords {
+  essential: string[];
+  preferred: string[];
+  skills: string[];
+  industry: string[];
+}
+
+interface Change {
+  original: string;
+  replacement: string;
+  explanation: string;
+}
+
+interface OptimizationResult {
+  optimized: string;
+  changes: Change[];
+}
+
 const genAI = new GoogleGenerativeAI(ENV_VARS.GOOGLE_AI_API_KEY || '');
 const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-export async function POST(request) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Parse and validate request body
     const body = await request.json();
@@ -69,7 +87,7 @@ export async function POST(request) {
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const optimization = JSON.parse(response.text());
+    const optimization: OptimizationResult = JSON.parse(response.text());
 
     return NextResponse.json({
       status: API_RESPONSE.SUCCESS,
@@ -88,4 +106,4 @@ export async function POST(request) {
       { status: 500 }
     );
   }
-} 
+}

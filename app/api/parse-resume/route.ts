@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
 import { ENV_VARS, API_RESPONSE } from '../../constants';
@@ -8,10 +8,44 @@ const requestSchema = z.object({
   content: z.string().min(1, "Resume content is required")
 });
 
+interface Education {
+  institution: string;
+  degree: string;
+  field: string;
+  dates: string;
+  gpa?: string;
+}
+
+interface Experience {
+  company: string;
+  position: string;
+  dates: string;
+  responsibilities: string[];
+}
+
+interface Skills {
+  technical: string[];
+  soft: string[];
+}
+
+interface Project {
+  name: string;
+  description: string;
+  technologies: string[];
+}
+
+interface ParsedResume {
+  summary: string;
+  education: Education[];
+  experience: Experience[];
+  skills: Skills;
+  projects: Project[];
+}
+
 const genAI = new GoogleGenerativeAI(ENV_VARS.GOOGLE_AI_API_KEY || '');
 const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-export async function POST(request) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Parse and validate request body
     const body = await request.json();
@@ -74,7 +108,7 @@ export async function POST(request) {
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const parsed = JSON.parse(response.text());
+    const parsed: ParsedResume = JSON.parse(response.text());
 
     return NextResponse.json({
       status: API_RESPONSE.SUCCESS,
@@ -90,4 +124,4 @@ export async function POST(request) {
       { status: 500 }
     );
   }
-} 
+}

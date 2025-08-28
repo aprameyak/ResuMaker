@@ -2,6 +2,7 @@ import Navigation from './components/Navigation';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from '../contexts/AuthContext';
 import { ReactNode } from 'react';
+import './globals.css';
 
 export const metadata = {
   title: 'ResuMaker - AI-Powered Resume Builder',

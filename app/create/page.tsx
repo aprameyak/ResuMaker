@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import ResumeEditor from '../components/ResumeEditor';
 import ResumeTemplates from '../components/ResumeTemplates';
 import { SECTION_TYPES, SectionType } from '../constants';
-import { FiHelpCircle } from 'react-icons/fi';
+import { FiHelpCircle, FiArrowLeft, FiEye } from 'react-icons/fi';
 
 // Force dynamic rendering for auth-protected pages
 export const dynamic = 'force-dynamic';
@@ -65,8 +65,21 @@ export default function CreatePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          border: '4px solid #e5e7eb',
+          borderTop: '4px solid #2563eb',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
       </div>
     );
   }
@@ -76,26 +89,73 @@ export default function CreatePage() {
   }
 
   return (
-    <div className="flex flex-col items-center py-8">
-      <div className="w-full max-w-5xl">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold">Create Your Resume</h1>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
+      padding: '80px 16px 64px 16px'
+    }}>
+      <div style={{
+        maxWidth: '1280px',
+        margin: '0 auto'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '48px'
+        }}>
+          <h1 style={{
+            fontSize: '48px',
+            fontWeight: 'bold',
+            color: '#111827'
+          }}>
+            Create Your Resume
+          </h1>
           <button 
             onClick={() => setShowHelp(!showHelp)}
-            className="flex items-center text-blue-600 hover:text-blue-800"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: 'none',
+              border: 'none',
+              color: '#2563eb',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: '500'
+            }}
           >
-            <FiHelpCircle className="mr-1" /> Help
+            <FiHelpCircle style={{ marginRight: '8px', width: '20px', height: '20px' }} />
+            Help
           </button>
         </div>
 
         {showHelp && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-blue-800 mb-2">Tips for a Great Resume</h3>
-            <ul className="list-disc pl-5 text-blue-700 text-sm space-y-1">
-              <li>Keep your resume concise and relevant - one to two pages maximum</li>
-              <li>Quantify achievements with numbers when possible (e.g., "Increased sales by 25%")</li>
-              <li>Tailor your resume for each job application by matching keywords from the job description</li>
-              <li>Use action verbs to describe your responsibilities and achievements</li>
+          <div style={{
+            backgroundColor: '#dbeafe',
+            border: '1px solid #93c5fd',
+            borderRadius: '12px',
+            padding: '24px',
+            marginBottom: '32px'
+          }}>
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              color: '#1e40af',
+              marginBottom: '16px'
+            }}>
+              Tips for a Great Resume
+            </h3>
+            <ul style={{
+              listStyle: 'disc',
+              paddingLeft: '24px',
+              color: '#1e40af',
+              fontSize: '16px',
+              lineHeight: '1.6'
+            }}>
+              <li style={{ marginBottom: '8px' }}>Keep your resume concise and relevant - one to two pages maximum</li>
+              <li style={{ marginBottom: '8px' }}>Quantify achievements with numbers when possible (e.g., "Increased sales by 25%")</li>
+              <li style={{ marginBottom: '8px' }}>Tailor your resume for each job application by matching keywords from the job description</li>
+              <li style={{ marginBottom: '8px' }}>Use action verbs to describe your responsibilities and achievements</li>
               <li>Proofread carefully for spelling and grammar errors</li>
             </ul>
           </div>
@@ -105,7 +165,14 @@ export default function CreatePage() {
           <ResumeTemplates onSelectTemplate={handleSelectTemplate} />
         ) : (
           <>
-            <p className="text-gray-600 mb-6">
+            <p style={{
+              fontSize: '20px',
+              color: '#4b5563',
+              marginBottom: '32px',
+              textAlign: 'center',
+              maxWidth: '800px',
+              margin: '0 auto 32px auto'
+            }}>
               Build your resume by adding or editing sections below. You can preview and export when ready.
             </p>
             <ResumeEditor 
@@ -114,17 +181,51 @@ export default function CreatePage() {
               onAdd={handleAdd}
               onDelete={handleDelete}
             />
-            <div className="mt-8 flex justify-end">
+            <div style={{
+              marginTop: '48px',
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '16px',
+              flexWrap: 'wrap'
+            }}>
               <button
                 onClick={() => setShowTemplates(true)}
-                className="px-4 py-2 text-blue-600 hover:underline mr-4"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '16px 32px',
+                  fontSize: '18px',
+                  fontWeight: '500',
+                  color: '#2563eb',
+                  backgroundColor: 'transparent',
+                  border: '1px solid #2563eb',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
               >
+                <FiArrowLeft style={{ marginRight: '8px', width: '20px', height: '20px' }} />
                 Back to Templates
               </button>
               <button
                 onClick={() => router.push('/preview')}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '16px 32px',
+                  fontSize: '18px',
+                  fontWeight: '500',
+                  color: 'white',
+                  backgroundColor: '#16a34a',
+                  border: '1px solid transparent',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
               >
+                <FiEye style={{ marginRight: '8px', width: '20px', height: '20px' }} />
                 Preview & Export
               </button>
             </div>

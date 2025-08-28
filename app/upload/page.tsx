@@ -3,7 +3,7 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
-import { FiUpload, FiFile, FiX } from 'react-icons/fi';
+import { FiUpload, FiFile, FiX, FiArrowRight, FiCheck } from 'react-icons/fi';
 
 // Force dynamic rendering for auth-protected pages
 export const dynamic = 'force-dynamic';
@@ -80,8 +80,21 @@ export default function UploadPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          border: '4px solid #e5e7eb',
+          borderTop: '4px solid #2563eb',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
       </div>
     );
   }
@@ -91,48 +104,147 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="flex flex-col items-center py-8">
-      <div className="w-full max-w-2xl">
-        <h1 className="text-4xl font-bold mb-8 text-center">Upload Your Resume</h1>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
+      padding: '80px 16px 64px 16px'
+    }}>
+      <div style={{
+        maxWidth: '768px',
+        margin: '0 auto'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#dbeafe',
+              borderRadius: '50%'
+            }}>
+              <FiUpload style={{ width: '48px', height: '48px', color: '#2563eb' }} />
+            </div>
+          </div>
+          <h1 style={{
+            fontSize: '48px',
+            fontWeight: 'bold',
+            color: '#111827',
+            marginBottom: '16px'
+          }}>
+            Upload Your Resume
+          </h1>
+          <p style={{
+            fontSize: '20px',
+            color: '#4b5563',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            Upload your existing resume to enhance it with AI-powered suggestions and professional formatting.
+          </p>
+        </div>
         
         {!parsedData ? (
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #f3f4f6',
+            padding: '48px'
+          }}>
+            <div style={{
+              border: '2px dashed #d1d5db',
+              borderRadius: '12px',
+              padding: '48px',
+              textAlign: 'center'
+            }}>
               {!file ? (
                 <>
-                  <FiUpload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <p className="text-lg text-gray-600 mb-4">
+                  <FiUpload style={{ 
+                    width: '64px', 
+                    height: '64px', 
+                    color: '#9ca3af', 
+                    margin: '0 auto 24px auto',
+                    display: 'block'
+                  }} />
+                  <p style={{
+                    fontSize: '20px',
+                    color: '#4b5563',
+                    marginBottom: '16px'
+                  }}>
                     Upload your existing resume to enhance it with AI
                   </p>
-                  <p className="text-sm text-gray-500 mb-6">
+                  <p style={{
+                    fontSize: '16px',
+                    color: '#6b7280',
+                    marginBottom: '32px'
+                  }}>
                     Supported format: PDF
                   </p>
-                  <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md inline-block transition-colors">
+                  <label style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '16px 32px',
+                    fontSize: '18px',
+                    fontWeight: '500',
+                    color: 'white',
+                    backgroundColor: '#2563eb',
+                    border: '1px solid transparent',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}>
                     Choose File
                     <input
                       type="file"
                       accept=".pdf"
                       onChange={handleFileSelect}
-                      className="hidden"
+                      style={{ display: 'none' }}
                     />
                   </label>
                 </>
               ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center space-x-2">
-                    <FiFile className="h-6 w-6 text-blue-600" />
-                    <span className="text-lg font-medium">{file.name}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '16px'
+                  }}>
+                    <FiFile style={{ width: '32px', height: '32px', color: '#2563eb' }} />
+                    <span style={{
+                      fontSize: '20px',
+                      fontWeight: '500',
+                      color: '#111827'
+                    }}>{file.name}</span>
                     <button
                       onClick={removeFile}
-                      className="text-red-500 hover:text-red-700"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        padding: '8px'
+                      }}
                     >
-                      <FiX className="h-5 w-5" />
+                      <FiX style={{ width: '24px', height: '24px' }} />
                     </button>
                   </div>
                   <button
                     onClick={handleUpload}
                     disabled={uploading}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-md transition-colors"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '16px 32px',
+                      fontSize: '18px',
+                      fontWeight: '500',
+                      color: 'white',
+                      backgroundColor: uploading ? '#9ca3af' : '#16a34a',
+                      border: '1px solid transparent',
+                      borderRadius: '8px',
+                      cursor: uploading ? 'not-allowed' : 'pointer',
+                      transition: 'background-color 0.2s'
+                    }}
                   >
                     {uploading ? 'Processing...' : 'Parse Resume'}
                   </button>
@@ -141,40 +253,136 @@ export default function UploadPage() {
             </div>
             
             {error && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-600">{error}</p>
+              <div style={{
+                marginTop: '24px',
+                padding: '16px',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '8px'
+              }}>
+                <p style={{ color: '#dc2626' }}>{error}</p>
               </div>
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <h2 className="text-2xl font-bold mb-4 text-green-600">Resume Parsed Successfully!</h2>
-            <p className="text-gray-600 mb-6">
-              Your resume has been analyzed and the content has been extracted. 
-              You can now edit and enhance it using our AI-powered tools.
-            </p>
-            
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold mb-2">Extracted Information:</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Contact information</li>
-                <li>• Work experience</li>
-                <li>• Education</li>
-                <li>• Skills</li>
-                <li>• Additional sections</li>
-              </ul>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #f3f4f6',
+            padding: '48px'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '64px',
+                height: '64px',
+                backgroundColor: '#dcfce7',
+                borderRadius: '50%',
+                marginBottom: '16px'
+              }}>
+                <FiCheck style={{ width: '32px', height: '32px', color: '#16a34a' }} />
+              </div>
+              <h2 style={{
+                fontSize: '32px',
+                fontWeight: 'bold',
+                color: '#16a34a',
+                marginBottom: '16px'
+              }}>
+                Resume Parsed Successfully!
+              </h2>
+              <p style={{
+                fontSize: '18px',
+                color: '#4b5563',
+                maxWidth: '500px',
+                margin: '0 auto'
+              }}>
+                Your resume has been analyzed and the content has been extracted. 
+                You can now edit and enhance it using our AI-powered tools.
+              </p>
             </div>
             
-            <div className="flex space-x-4">
+            <div style={{
+              backgroundColor: '#f9fafb',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '32px'
+            }}>
+              <h3 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#111827',
+                marginBottom: '16px'
+              }}>
+                Extracted Information:
+              </h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '12px'
+              }}>
+                {['Contact information', 'Work experience', 'Education', 'Skills', 'Additional sections'].map((item, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      backgroundColor: '#2563eb',
+                      borderRadius: '50%'
+                    }}></div>
+                    <span style={{ color: '#4b5563' }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              gap: '16px',
+              justifyContent: 'center',
+              flexWrap: 'wrap'
+            }}>
               <button
                 onClick={handleContinueEditing}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md transition-colors"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '16px 32px',
+                  fontSize: '18px',
+                  fontWeight: '500',
+                  color: 'white',
+                  backgroundColor: '#2563eb',
+                  border: '1px solid transparent',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
               >
                 Continue Editing
+                <FiArrowRight style={{ marginLeft: '8px', width: '20px', height: '20px' }} />
               </button>
               <button
                 onClick={removeFile}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-3 rounded-md transition-colors"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '16px 32px',
+                  fontSize: '18px',
+                  fontWeight: '500',
+                  color: '#6b7280',
+                  backgroundColor: '#f3f4f6',
+                  border: '1px solid transparent',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
               >
                 Upload Different Resume
               </button>
