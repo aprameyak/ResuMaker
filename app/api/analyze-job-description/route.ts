@@ -16,7 +16,7 @@ interface JobAnalysis {
 }
 
 const genAI = new GoogleGenerativeAI(ENV_VARS.GOOGLE_AI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {

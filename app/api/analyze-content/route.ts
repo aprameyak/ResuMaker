@@ -45,7 +45,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const { section, content } = validatedData.data;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
     
     const prompt = `Analyze this resume ${section} content and provide specific improvements. For each suggestion, provide:
     1. The original text that needs improvement

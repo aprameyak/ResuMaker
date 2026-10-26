@@ -17,7 +17,7 @@ Some parts work end to end and some are only partly wired up:
 
 - Accounts: passwords hashed with bcrypt, JWTs signed with `JWT_SECRET`, and session rows stored in Postgres through Prisma. Sign-up and sign-in also write a `UserAction` row.
 - Resume editor at `/create`: add, edit, and delete sections, starting from one of five templates (Professional, Technical, Academic, Minimalist, Executive)
-- Gemini routes (`gemini-pro` via `@google/generative-ai`), each validating its input with zod:
+- Gemini routes (`gemini-3.8-flash` via `@google/generative-ai`), each validating its input with zod:
   - `POST /api/parse-resume` and `POST /api/upload`: `{ content }` resume text to `{ summary, education, experience, skills, projects }`
   - `POST /api/generate`: `{ content, type }` to rewrite suggestions, rate-limited per IP
   - `POST /api/analyze-content`: `{ section, content }` to suggestions for one section
