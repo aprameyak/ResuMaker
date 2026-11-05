@@ -29,7 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { 
           status: API_RESPONSE.ERROR,
           error: 'Invalid request data',
-          details: validatedData.error.errors.map(err => ({
+          details: validatedData.error.issues.map(err => ({
             path: err.path.join('.'),
             message: err.message
           }))
