@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 
 # Sitemaps
-Sitemap: https://resumaker.vercel.app/sitemap.xml 
+Sitemap: https://resumaker.aprameyak.workers.dev/sitemap.xml 

@@ -2,7 +2,7 @@
 
 ResuMaker is a Next.js resume builder. It has email and password accounts, a section-based editor with starter templates, and API routes that use Google Gemini to parse resume text into structured JSON and to suggest edits.
 
-Live site: https://resumaker-tan.vercel.app
+Live site: https://resumaker.aprameyak.workers.dev
 
 ## Status
 
