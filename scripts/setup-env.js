@@ -32,8 +32,6 @@ DATABASE_URL="postgresql://username:password@host/database?sslmode=require&chann
 JWT_SECRET=${jwtSecret}
 JWT_EXPIRES_IN=7d
 
-# Google AI Configuration (Required for resume generation)
-GOOGLE_AI_API_KEY=your_google_ai_api_key_here
 
 # Google OAuth (Optional - for Google sign-in)
 GOOGLE_CLIENT_ID=your_google_client_id
@@ -57,7 +55,6 @@ try {
   
   console.log('✅ .env.local file created successfully!');
   console.log('\n📝 Next steps:');
-  console.log('1. Update GOOGLE_AI_API_KEY with your actual key');
   console.log('2. Add other optional configuration as needed');
   console.log('3. Run: npx prisma migrate dev --name init');
   console.log('4. Start your app: npm run dev');

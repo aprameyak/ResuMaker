@@ -21,22 +21,8 @@ export const FEEDBACK_TYPES = {
 
 export type FeedbackType = typeof FEEDBACK_TYPES[keyof typeof FEEDBACK_TYPES];
 
-// API Response structure
-export const API_RESPONSE = {
-  SUCCESS: 'success',
-  ERROR: 'error'
-} as const;
-
-export type ApiResponseType = typeof API_RESPONSE[keyof typeof API_RESPONSE];
-
 // Validation schemas
 export const REQUEST_SCHEMA = {
   section: 'string',
   content: 'string'
-} as const;
-
-// Environment variables
-export const ENV_VARS = {
-  GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
-  NEXT_PUBLIC_MAX_CONTENT_LENGTH: process.env.NEXT_PUBLIC_MAX_CONTENT_LENGTH || '5000'
 } as const;

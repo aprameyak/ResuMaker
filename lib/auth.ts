@@ -2,10 +2,6 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { prisma } from './database'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-build-only'
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
-
-// Only throw error at runtime, not build time
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET
   if (!secret) {
