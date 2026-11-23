@@ -9,6 +9,7 @@ const LINKS = [
   { href: '/create', label: 'Create' },
   { href: '/upload', label: 'Upload' },
   { href: '/tailor', label: 'Tailor' },
+  { href: '/ide', label: 'Editor' },
 ];
 
 export default function Navigation() {
@@ -63,9 +64,12 @@ export default function Navigation() {
                 </button>
               </>
             ) : (
-              <Link href="/auth" className="btn" style={{ minHeight: '40px', padding: '6px 16px', fontSize: '15px' }}>
-                Sign in
-              </Link>
+              <>
+                <Link href="/ide" className="nav-link">Editor</Link>
+                <Link href="/auth" className="btn" style={{ minHeight: '40px', padding: '6px 16px', fontSize: '15px' }}>
+                  Sign in
+                </Link>
+              </>
             )}
           </div>
 
@@ -115,14 +119,19 @@ export default function Navigation() {
                 </div>
               </div>
             ) : (
-              <Link
-                href="/auth"
-                className="btn"
-                style={{ width: '100%' }}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Sign in
-              </Link>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <Link href="/ide" className="nav-link" style={{ minHeight: '44px' }} onClick={() => setIsMenuOpen(false)}>
+                  Editor
+                </Link>
+                <Link
+                  href="/auth"
+                  className="btn"
+                  style={{ width: '100%' }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign in
+                </Link>
+              </div>
             )}
           </div>
         )}

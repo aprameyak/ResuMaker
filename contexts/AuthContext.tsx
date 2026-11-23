@@ -21,6 +21,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const TOKEN_KEY = 'auth_token'
+
+function readToken(): string | null {
+  try { return localStorage.getItem(TOKEN_KEY) } catch { return null }
+}
+function writeToken(token: string): void {
+  try { localStorage.setItem(TOKEN_KEY, token) } catch { /* storage blocked or full */ }
+}
+function clearToken(): void {
+  try { localStorage.removeItem(TOKEN_KEY) } catch { /* storage blocked */ }
+}
+
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext)
   if (!context) {
@@ -40,7 +52,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const getInitialSession = async () => {
       try {
-        const token = localStorage.getItem('auth_token')
+        const token = readToken()
         if (token) {
           const response = await fetch('/api/auth/verify', {
             headers: {
@@ -52,13 +64,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const { user } = await response.json()
             setUser(user)
           } else {
-            // Token is invalid, remove it
-            localStorage.removeItem('auth_token')
+            clearToken()
           }
         }
-      } catch (error) {
-        console.error('Error getting initial session:', error)
-        localStorage.removeItem('auth_token')
+      } catch {
+        clearToken()
       } finally {
         setLoading(false)
       }
@@ -86,8 +96,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw new Error(data.error || 'Signup failed')
     }
 
-    // Store token and set user
-    localStorage.setItem('auth_token', data.token)
+    writeToken(data.token)
     setUser(data.user)
 
     // Track user action
@@ -113,8 +122,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw new Error(data.error || 'Signin failed')
     }
 
-    // Store token and set user
-    localStorage.setItem('auth_token', data.token)
+    writeToken(data.token)
     setUser(data.user)
 
     // Track user action
@@ -127,7 +135,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signOut = async () => {
     try {
-      const token = localStorage.getItem('auth_token')
+      const token = readToken()
       if (token) {
         await fetch('/api/auth/signout', {
           method: 'POST',
@@ -139,8 +147,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch (error) {
       console.error('Error during signout:', error)
     } finally {
-      // Always clear local state and token
-      localStorage.removeItem('auth_token')
+      clearToken()
       setUser(null)
     }
   }
