@@ -11,6 +11,8 @@ export interface Target {
   roleHeader?: string
   section?: string
   ambiguous?: string[]
+  /** Set when the prompt named a role or section that does not exist in the resume (the target is then NOT usable). */
+  unresolved?: string
 }
 
 export interface DocInput {
@@ -33,7 +35,7 @@ interface Role {
   hasContent: boolean
   recency: number
 }
-interface Section { key: string; headingFrom: number; headingTo: number; from: number; to: number; title: string }
+interface Section { key: string; headingFrom: number; headingTo: number; from: number; to: number; title: string; inlineFrom?: number }
 interface Index { text: string; roles: Role[]; bullets: Bullet[]; sections: Section[] }
 
 interface Line { start: number; end: number; text: string }
@@ -84,6 +86,11 @@ function buildIndex(text: string): Index {
     const s = sections[sectionStartIdx]
     let last = endLineIdx - 1
     while (last >= 0 && isBlank(lines[last])) last--
+    if (s.inlineFrom !== undefined) {
+      s.from = s.inlineFrom
+      s.to = Math.max(s.inlineFrom, last >= 0 ? lines[last].end : s.headingTo)
+      return
+    }
     const firstBody = lines.findIndex(l => l.start > s.headingTo && !isBlank(l))
     if (firstBody >= 0 && lines[firstBody].start <= (lines[last] ? lines[last].start : -1)) {
       s.from = lines[firstBody].text.length ? lines[firstBody].start + (lines[firstBody].text.length - lines[firstBody].text.trimStart().length) : lines[firstBody].start
@@ -118,7 +125,7 @@ function buildIndex(text: string): Index {
     if (heading || inlineKey) {
       closeSection(i)
       section = (heading || inlineKey) as string
-      sections.push({ key: section, headingFrom: line.start + (line.text.length - line.text.trimStart().length), headingTo: line.end, from: line.end, to: line.end, title: heading ? t : inline![1] })
+      sections.push({ key: section, headingFrom: line.start + (line.text.length - line.text.trimStart().length), headingTo: line.end, from: line.end, to: line.end, title: heading ? t : inline![1], inlineFrom: heading ? undefined : line.end - inline![2].length })
       sectionStartIdx = sections.length - 1
       current = null
       lastBullet = null
@@ -415,43 +422,64 @@ function resolveInner(prompt: string, doc: DocInput, text: string): Target {
     return { role: pickRecent(rolePool), ambiguous: rolePool.length > 1 ? rolePool.map(r => roleLabel(r)) : undefined }
   }
 
-  // 2a. ordinals: "second bullet", "last role"
-  const ordRe = /\b(first|1st|second|2nd|third|3rd|fourth|4th|fifth|5th|sixth|6th|last|final|top|bottom)\s+(?:one\s+)?(bullet|bullets|point|points|line|role|job|position|project|section)\b/
-  const om = p.match(ordRe)
-  const numBullet = p.match(/\b(?:bullet|point|line)\s*(?:#|number|no\.?)?\s*(\d{1,2})\b/)
-  if (om || numBullet) {
-    const noun = om ? om[2] : 'bullet'
-    const n = om ? ORD[om[1]] : Number(numBullet![1])
-    if (/^(role|job|position|project)$/.test(noun)) {
-      const pool = noun === 'project' ? (projRoles.length ? projRoles : rolePool) : rolePool
+  // 2a. ordinals: "second bullet", "last role", and two-part references ("second bullet of the second job")
+  const ORD_WORDS = 'first|1st|second|2nd|third|3rd|fourth|4th|fifth|5th|sixth|6th|last|final|top|bottom'
+  const bulletRef = p.match(new RegExp(`\\b(${ORD_WORDS})\\s+(?:one\\s+)?(?:bullet|point|line)s?\\b|\\b(?:bullet|point|line)\\s*(?:#|number|no\\.?)?\\s*(\\d{1,2})\\b`))
+  const roleOrd = (txt: string, pool: Role[]): Role | undefined => {
+    const m = txt.match(new RegExp(`\\b(${ORD_WORDS})\\s+(?:role|job|position|project|internship|gig)\\b`))
+    if (!m) return undefined
+    const n = ORD[m[1]]
+    return n === -1 ? pool[pool.length - 1] : pool[n - 1]
+  }
+  const roleRecency = (txt: string, pool: Role[]): Role | undefined => {
+    const m = txt.match(/\b(most recent|latest|newest|current|present|oldest|earliest|previous|prior)\s+(?:role|job|position|employer|gig|internship)\b/)
+    if (!m || !pool.length) return undefined
+    const asc = /oldest|earliest/.test(m[1])
+    const sorted = pool.slice().sort((x, y) => (asc ? x.recency - y.recency : y.recency - x.recency))
+    return /previous|prior/.test(m[1]) ? sorted[1] || sorted[0] : sorted[0]
+  }
+  if (bulletRef) {
+    const n = bulletRef[1] ? ORD[bulletRef[1]] : Number(bulletRef[2])
+    const rest = p.replace(bulletRef[0], ' ')
+    const pool = wantsProject && projRoles.length ? projRoles : rolePool
+    const qualified = roleOrd(rest, named && named.tied.length > 1 ? named.tied : pool) || roleRecency(rest, pool)
+    const secKey = sectionKeysIn(rest).filter(k => k !== 'experience')[0]
+    if (!qualified && secKey && !named) {
+      const sec = idx.sections.find(x => x.key === secKey)
+      if (sec) {
+        const inSec = idx.bullets.filter(b => b.from >= sec.headingTo && b.from <= Math.max(sec.to, sec.headingTo))
+        const b = n === -1 ? inSec[inSec.length - 1] : inSec[n - 1]
+        if (b) return bulletTarget(idx, b)
+        return sectionTarget(idx, sec)
+      }
+    }
+    const ctx = qualified ? { role: qualified, ambiguous: undefined as string[] | undefined } : contextRole()
+    if (ctx && ctx.role.bullets.length) {
+      const bl = ctx.role.bullets
+      const b = n === -1 ? bl[bl.length - 1] : bl[n - 1]
+      if (b) return bulletTarget(idx, b, ctx.ambiguous)
+      return roleTarget(idx, ctx.role, ctx.ambiguous)
+    }
+    const flat = idx.bullets.filter(b => b.marker)
+    const b = n === -1 ? flat[flat.length - 1] : flat[n - 1]
+    if (b) return bulletTarget(idx, b)
+  }
+  const om = p.match(new RegExp(`\\b(${ORD_WORDS})\\s+(?:one\\s+)?(role|job|position|project|section)\\b`))
+  if (om) {
+    const n = ORD[om[1]]
+    if (om[2] === 'section') {
+      const sec = n === -1 ? idx.sections[idx.sections.length - 1] : idx.sections[n - 1]
+      if (sec) return sectionTarget(idx, sec)
+    } else {
+      const pool = om[2] === 'project' ? (projRoles.length ? projRoles : rolePool) : named && named.tied.length > 1 ? named.tied : rolePool
       const r = n === -1 ? pool[pool.length - 1] : pool[n - 1]
       if (r) return roleTarget(idx, r)
-    } else if (/^(bullet|bullets|point|points|line)$/.test(noun) && !(om && /s$/.test(noun) && ORD[om[1]] === undefined)) {
-      const ctx = contextRole()
-      if (ctx && ctx.role.bullets.length) {
-        const bl = ctx.role.bullets
-        const b = n === -1 ? bl[bl.length - 1] : bl[n - 1]
-        if (b) return bulletTarget(idx, b, ctx.ambiguous)
-        return roleTarget(idx, ctx.role, ctx.ambiguous)
-      }
-      const pool = idx.bullets.filter(b => b.marker)
-      const b = n === -1 ? pool[pool.length - 1] : pool[n - 1]
-      if (b) return bulletTarget(idx, b)
-    } else if (noun === 'section') {
-      const s = idx.sections
-      const sec = n === -1 ? s[s.length - 1] : s[n - 1]
-      if (sec) return sectionTarget(idx, sec)
     }
   }
 
   // 2b. recency words: "most recent job", "current role", "oldest job"
-  const rec = p.match(/\b(most recent|latest|newest|current|present|oldest|earliest|previous|prior)\s+(?:role|job|position|employer|gig|internship)\b/)
-  if (rec && rolePool.length) {
-    const asc = /oldest|earliest/.test(rec[1])
-    const sorted = rolePool.slice().sort((a, b) => (asc ? a.recency - b.recency : b.recency - a.recency))
-    const r = /previous|prior/.test(rec[1]) ? sorted[1] || sorted[0] : sorted[0]
-    return roleTarget(idx, r)
-  }
+  const recRole = roleRecency(p, rolePool)
+  if (recRole) return roleTarget(idx, recRole)
 
   // 2c. company / title / year / project name
   if (named) {
@@ -460,13 +488,22 @@ function resolveInner(prompt: string, doc: DocInput, text: string): Target {
       const b = bulletByContent(named.role.bullets, p, pWords)
       if (b) return bulletTarget(idx, b, ambig(named.tied))
     }
+    if (named.tied.length > 1) {
+      const older = /\b(older|oldest|earlier|earliest|former|previous|prior|old)\b/.test(p)
+      const newer = /\b(newer|newest|later|latest|recent|current|new)\b/.test(p)
+      if (older !== newer) {
+        const sorted = named.tied.slice().sort((x, y) => (older ? x.recency - y.recency : y.recency - x.recency))
+        return roleTarget(idx, sorted[0])
+      }
+    }
     return roleTarget(idx, named.role, ambig(named.tied))
   }
   const eduHit = idx.sections.find(s => s.key === 'education' && parsed.education.some(e => e.institution && containsPhrase(p, normKey(e.institution).split(' ').slice(0, 3).join(' '))))
   if (eduHit) return sectionTarget(idx, eduHit)
 
   // 2d. section names
-  for (const key of sectionKeysIn(p)) {
+  const askedSections = sectionKeysIn(p)
+  for (const key of askedSections) {
     const s = idx.sections.find(x => x.key === key)
     if (s) return sectionTarget(idx, s)
   }
@@ -475,6 +512,23 @@ function resolveInner(prompt: string, doc: DocInput, text: string): Target {
   if (/\b(bullet|point|line|sentence|the one (about|with|on|that))\b/.test(p)) {
     const b = bulletByContent(idx.bullets.filter(x => x.marker || x.role), p, pWords)
     if (b) return bulletTarget(idx, b)
+  }
+
+  // 2d'. an explicit name or section that does not exist must never widen to the whole document
+  if (askedSections.length) return { ...documentTarget(text), unresolved: `a ${askedSections[0]} section` }
+  const nm = p.match(/\b(?:my|the|at|for|in)\s+([a-z][a-z0-9&.'-]*(?:\s[a-z][a-z0-9&.'-]*)?)\s+(?:job|role|position|internship|gig|bullets?|work|experience|stint)\b/)
+  if (nm) {
+    const GENERIC = /^(first|second|third|fourth|fifth|sixth|last|final|current|latest|most|recent|oldest|earliest|newest|newer|older|previous|prior|past|old|new|whole|entire|full|part|time|full-time|part-time|summer|this|that|these|those|each|every|all|other|another|same|professional|work|your|resume|cv|summary|skills?|education|projects?|experience|internship|volunteer|freelance|paid|teaching|research|relevant|personal|technical|soft|hard|key|main|top|best|worst|weakest|strongest|own|day|real|actual|bottom|middle|and|of|to|a|an|the|my|current|one|two|three)$/
+    const toks = nm[1].split(' ')
+    if (toks.every(t => !GENERIC.test(t))) return { ...documentTarget(text), unresolved: `a role or employer called "${nm[1]}"` }
+  }
+
+  // 2d''. "this bullet ... for the job posting / ATS" with the cursor in a bullet stays on that bullet
+  if (cursor !== undefined && /\b(this|that|it)\b/.test(p) && !/\b(resume|r[e\u00e9]sum[e\u00e9]|cv|everything|whole|entire|document|overall|all (my |of my |the )?(bullets|roles|jobs|sections|experience)|every (bullet|role|job)|one[- ]page|pages?)\b/.test(p)) {
+    const b = bulletAt(idx, cursor)
+    if (b && (b.marker || b.role)) return bulletTarget(idx, b)
+    const r = roleAt(idx, cursor)
+    if (r) return roleTarget(idx, r)
   }
 
   // 2f. whole-document words

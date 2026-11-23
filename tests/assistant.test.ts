@@ -195,7 +195,7 @@ test('intent table', () => {
     ['tailor to the job', 'tailor'], ['tailor my resume to this posting', 'tailor'], ['which keywords am I missing', 'tailor'],
     ['does it pass my criteria?', 'check'], ['check my resume for ATS problems', 'check'], ['is my resume ATS friendly?', 'check'], ['run my criteria', 'check'],
     ['why is this flagged?', 'explain'], ["what's wrong with this bullet", 'explain'], ['explain this warning', 'explain'],
-    ['write a summary', 'summarize'], ['rewrite my summary', 'summarize'],
+    ['write a summary', 'summarize'], ['rewrite my summary', 'rewrite'], ['improve my summary', 'strengthen'], ["don't shorten this, make it stronger", 'strengthen'],
     ['rewrite this bullet', 'rewrite'], ['rephrase this', 'rewrite'], ['reword it', 'rewrite'], ['rewrite 3 bullets', 'rewrite', { count: 3 }],
     ['hmm', 'unknown'], ['', 'unknown'],
   ]
@@ -428,7 +428,7 @@ test('REGRESSION: a candidate that stops starting with a verb is rejected and ne
 
 test('lint errors and slice warnings may not increase', async () => {
   // "I" in the candidate trips first-person in the guard; "Responsible for" would add a lint warning
-  const warn = 'Responsible for cutting build times 35% by migrating to Bazel'
+  const warn = 'Worked on cutting build times 35% by migrating to Bazel'
   const model = new ScriptedModel([warn, 'Reduced build times 35% by migrating to Bazel'])
   const r = await runAssistant({ ...cutDoc(), model })
   assert.equal(r.status, 'proposal')

@@ -4,6 +4,10 @@ export interface ScopeResult {
   inScope: boolean
   reason: string
   refusal?: string
+  /** For a multi-part request: the clauses that are not about the resume. */
+  outOfScopeParts?: string[]
+  /** For a multi-part request: the clauses that are resume edits (what the assistant would act on). */
+  inScopeParts?: string[]
 }
 
 export const REFUSAL =
@@ -125,41 +129,188 @@ function mentionsName(p: string, names: string[]): boolean {
   })
 }
 
+
+// ---------------------------------------------------------------- multi-part prompts
+
+// Extra whole-prompt denials: payloads that ride behind a resume request.
+const EXTRA_DENY: RegExp[] = [
+  /\b(e-?mail|mail|text|message|dm)\b.{0,12}\b(it|this|that|them|these)\b.{0,10}\bto\b/,
+  /\b(send|forward|submit|post|publish|share|upload|tweet)\b.{0,30}\b(to|on|via)\b\s+\w+/,
+  /\b(hack|crack|exploit|malware|virus|ransomware|phish\w*|ddos|keylogger|lock ?pick|pick a lock|wi-?fi|password)\b/,
+  /\b(curl|wget|sudo|chmod|rm -rf|powershell)\b|\|\s*(sh|bash)\b|;\s*(sh|bash)\b|\bbash -c\b/,
+  /\b(stocks?|invest\w*|flights?|hotels?|fun facts?|cats?|dogs?|pirate|yoda|emojis?|spic(y|ier|ed)|horoscope|crypto|forex)\b/,
+  /\badd (a |an |some |my )?(quote|joke|poem|meme|slogan|motto)\b/,
+  /\b(respond|reply|answer|speak|talk|say|output)\b.{0,25}\b(in|into) (french|spanish|german|italian|portuguese|chinese|japanese|korean|russian|arabic|hindi|latin|all caps|uppercase|rhyme|verse|emoji)\b/,
+  /\bsay hello\b|\bin \d+ languages\b/,
+  /\bin the (voice|style|tone|manner) of\b/,
+  /\bnew (task|instructions?|prompt|conversation|topic)\b/,
+  /\b(ignor\w*|olvida\w*|oublie\w*|ignoriere\w*|vergiss\w*)\b.{0,30}\b(instruc\w*|anteriores|precedentes|pr[eé]c[eé]dentes|vorherig\w*|previous|above|prior|earlier|everything|all)\b/,
+  /\bignore (the |all )?(above|everything|prior|earlier|previous)\b/,
+  /\b(overrul\w*|supersede|nullify)\b/,
+  /\b(what|which|tell me|show me|list) (are )?(the |your )?(rules|instructions|guidelines|model|prompt)\b.{0,25}\b(you|your)\b|\bwhat model are you\b|\bwhich model\b|\bare you (a |an )?(model|llm|bot)\b/,
+  /\b(disclose|expose|leak)\b|\b(initial|original|full|entire|hidden|secret) (context|prompt|rules|instructions)\b/,
+  /\b(text|everything|messages?|words?) (before|above)\b( this| the)?( message| line| prompt| point)?/,
+  /\buser_facts\b|\b(print|echo|dump|output|reveal)\b.{0,20}\b(block|tag|context|prompt|verbatim)\b/,
+  /\b(author|recruiter|hiring manager|manager|boss|company)('s)? e-?mail\b/,
+  /\badd (a |an |another |my )?(new |fake |extra )?(job|role|position|internship|degree|certification|award|company|employer)\b/,
+  /\b(convert|export|save|make|generate|create|turn)\b.{0,25}\b(latex|pdf|docx|word document|html|markdown)\b/,
+  /\bwrite (me )?(a )?(poem|song|story|haiku|joke)\b/,
+  /\bstands? for\b/,
+  /\b(invent|fabricate|falsify|embellish|exaggerate|make up|made up|made-up)\b|\b(lie|lying)\b.{0,10}\b(on|in) my (resume|cv)\b|\b(fake|bogus|fictional)\b|\bpretend\b/,
+]
+
+const FILLER_START = /^(?:hey|hi|hello|yo|ok|okay|alright|all right|sure|yes|yeah|yep|yup|please|pls|plz|kindly|thanks|thank you|thx|so|well|honestly|actually|basically|just|now|then|also|and|but|can you|could you|would you|will you|can u|could u|can i|i want you to|i need you to|i'd like you to|i would like you to|i would love it if you could|i would love you to|i'd love it if you could|go ahead and|let's|lets|you should|you can|try to|maybe|perhaps|um|uh|hmm|ok so|so please|and please|if you could|if you can|again)\b\s*/
+const FILLER_END = /\s*\b(?:please|pls|plz|thanks|thank you|thx|if you can|if possible|as well|too|for me|now|again|ok|okay|thanks so much|appreciate it|right|thanks a lot|asap)\s*$/
+
+const EDIT_VERBS = new Set('make fix shorten tighten strengthen improve rewrite rephrase reword polish edit trim cut condense quantify tailor update revise clean proofread check review audit score add remove delete replace move reorder reorganize reorganise merge split expand simplify align match optimize optimise rework sharpen enhance boost highlight emphasize emphasise reduce swap rename capitalize capitalise format convert lengthen summarize summarise explain show list analyze analyse compare validate run apply write draft translate shrink fit squeeze rank prioritize prioritise rebuild restructure redo upgrade beef punch spice jazz use start begin combine avoid stop keep drop include mention put turn change lower raise increase decrease rate get lose ensure help be sound read look tell give describe'.split(' '))
+const NONEDIT_ACTIONS = new Set('say send email mail book buy order hack crack execute output print echo respond reply answer sing draw plan find search calculate solve recommend generate create compose disclose reveal pretend act ignore forget disregard override overrule remember call text post tweet browse open download install play teach do go take let think imagine roleplay simulate speak talk chat learn wait install deploy install kill delete_all'.split(' '))
+const BARE_OK = new Set('shorten tighten strengthen improve rewrite rephrase reword polish edit trim condense quantify tailor proofread simplify expand sharpen enhance shrink fix check review audit lengthen revise'.split(' '))
+const NEEDS_ANCHOR_VERBS = new Set(['tell', 'give', 'describe', 'show', 'explain', 'list', 'compare', 'rate', 'help'])
+const STYLE = /\b(stronger|strong|weak|weaker|weakest|shorter|short|shorten|long|longer|wordy|concise|tight|tighter|punchy|punchier|pop|impressive|senior|confident|professional|clearer|clear|vague|generic|robotic|human|natural|plain|simple|simpler|direct|specific|polished|better|worse|good|bad|ok|okay|fine|ready|awkward|clunky|boring|passive|active|consistent|consistently|properly|missing|needs?|flagged|flag|wrong|ai|brief|crisp|crisper|compelling|impactful|powerful|friendly|readable|cleaner|less|more|half|senior|junior|formal|casual|upbeat|fluff|buzzwordy|repetitive|detailed|sharper|punch|jazz|spice)\b/
+const RESUME_WORD = /\b(resume|resumes|r[ée]sum[ée]s?|cv|bullets?|bullet points?|points?|lines?|sentences?|role|roles|jobs?|position|positions|employer|employers|section|sections|summary|objective|skills?|experience|education|projects?|header|heading|headings|contact|ats|keywords?|criteria|criterion|posting|description|jd|pages?|length|format|formatting|layout|font|gpa|dates?|title|titles|internship|achievements?|accomplishments?|verbs?|metrics|numbers|figures|percentages|passive|active|voice|tense|buzzwords?|typos?|lint|warnings?|problems?|issues?|errors?|flagged|score|wording|phrasing|words?|language|capitali[sz]ation|spelling|grammar|punctuation|tone|casing|jargon|filler|fluff|text|selection|selected|everything|name|email|phone|address)\b/
+const NARROW_Q = /\b(resume|r[ée]sum[ée]|cv|bullets?|summary|section|skills?|roles?|criteria|criterion|length|format(ting)?|ats|keywords?|pages?|posting|education|header|gpa|dates?|numbers|metrics|flagged|line|lines|words)\b|\b(my|this|that|the) (job|jobs|role|experience|education|work)\b/
+const DEICTIC = /\b(it|this|that|these|those|them|one|everything|all|selection|selected|here)\b/
+const HARD_ANCHOR = /\b(resume|r[ée]sum[ée]|cv|bullets?|summary|section|skills?|roles?|jobs?|experience|education|criteria|keywords?|ats|posting|header|projects?)\b/
+const QUESTION_START = /^(what|which|how|why|where|when|who|is|are|does|do|did|can|should|will|would|could|am)\b/
+const TYPO_MAP: Record<string, string> = { mak: 'make', mke: 'make', amke: 'make' }
+const FUZZY_VOCAB = ['shorten', 'strengthen', 'improve', 'rewrite', 'rephrase', 'tighten', 'polish', 'proofread', 'condense', 'quantify', 'simplify', 'summarize', 'stronger', 'shorter', 'concise', 'professional', 'bullets', 'resume', 'tailor', 'punchier', 'clearer', 'impressive', 'confident']
+
+function damerau(a: string, b: string): number {
+  if (Math.abs(a.length - b.length) > 1) return 2
+  const d: number[][] = []
+  for (let i = 0; i <= a.length; i++) { d[i] = []; for (let j = 0; j <= b.length; j++) d[i][j] = i === 0 ? j : j === 0 ? i : 0 }
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1)
+    }
+  }
+  return d[a.length][b.length]
+}
+
+function fixTypos(text: string): string {
+  return text.split(' ').map(w => {
+    if (TYPO_MAP[w]) return TYPO_MAP[w]
+    if (w.length < 5 || FUZZY_VOCAB.indexOf(w) >= 0) return w
+    let best: string | undefined
+    FUZZY_VOCAB.forEach(v => { if (!best && w[0] === v[0] && damerau(w, v) <= 1) best = v })
+    return best || w
+  }).join(' ')
+}
+
+function stripFillers(c: string): string {
+  let s = c.replace(/[,"]+/g, ' ').replace(/\s+/g, ' ').trim()
+  for (let k = 0; k < 6; k++) {
+    const before = s
+    s = s.replace(FILLER_START, '').trim()
+    s = s.replace(FILLER_END, '').trim()
+    if (s === before) break
+  }
+  return s.replace(/[?!.]+$/g, '').trim()
+}
+
+function splitClauses(p: string): string[] {
+  const parts = p.split(/\n+|[.!?;]+(?:\s+|$)/)
+  const out: string[] = []
+  parts.forEach(part => {
+    part.split(/\s*,\s+|\s+,\s*|\s+(?:and also|and then|and after that|after that|afterwards|thereafter|then|but first|but also|also|plus|and)\s+/).forEach(x => {
+      const t = x.trim()
+      if (t) out.push(t)
+    })
+  })
+  return out
+}
+
+type Verdict = 'edit' | 'neutral' | 'out'
+
+function classifyClause(raw: string, names: string[]): Verdict {
+  const colon = raw.match(/^([^:]{2,70}):\s*(.+)$/)
+  let c = raw
+  if (colon && colon[2].split(' ').length > 3) {
+    const prefix = classifyClause(colon[1], names)
+    if (prefix === 'out') return 'out'
+    if (/^(please )?(quantify|add (real )?(numbers?|metrics?|figures?))/.test(colon[1])) return 'edit'
+    if (!HARD_ANCHOR.test(colon[1]) && !mentionsName(colon[1], names)) return 'out'
+    c = colon[1]
+  }
+  const s0 = stripFillers(c)
+  if (!s0) return 'neutral'
+  let s = fixTypos(s0)
+  let tokens = s.split(' ')
+  if (/^(first|second|third|next|finally)$/.test(tokens[0]) && tokens[1] && (EDIT_VERBS.has(tokens[1]) || NONEDIT_ACTIONS.has(tokens[1]) || NEEDS_ANCHOR_VERBS.has(tokens[1]))) { tokens = tokens.slice(1); s = tokens.join(' ') }
+  const first = tokens[0]
+  const hasResume = RESUME_WORD.test(s) || CONTACT.test(s) || mentionsName(s, names)
+  const style = STYLE.test(s)
+  const deictic = DEICTIC.test(s)
+
+  if (/\blinkedin\b/.test(s) && !/\b(resume|cv)\b/.test(s)) return 'out'
+  if (DEICTIC_ONLY.test(s) || SHORT_ACTION.test(s) || STYLE_REQ.test(s) || SOUND_REQ.test(s) || ONE_LINER.test(s) || BARE_ADJ.test(s)) return 'edit'
+  if (/^(quantify|add (real )?(numbers?|metrics?|figures?|stats))( to)? (this|it|that|these|the|my)\b/.test(s)) return 'edit'
+  if (QUESTION_FORMS.some(re => re.test(s)) && (NARROW_ANCHOR.test(s) || /\b(it|this|that|these|my)\b/.test(s))) return 'edit'
+
+  if (NONEDIT_ACTIONS.has(first)) return 'out'
+  if (QUESTION_START.test(first)) {
+    if (NARROW_Q.test(s) && (style || /\b(look|work|read|sound|flagged|wrong|missing|think)\b/.test(s) || /\b(is|are|does|do|how|what|which|where|why)\b/.test(first))) return 'edit'
+    if (/^(is|are|does|do|can|should|will|would|could)\b/.test(first) && /\b(it|this|that|these)\b/.test(s) && style) return 'edit'
+    return 'out'
+  }
+  if (NEEDS_ANCHOR_VERBS.has(first)) return HARD_ANCHOR.test(s) || CONTACT.test(s) ? 'edit' : 'out'
+  if (EDIT_VERBS.has(first)) {
+    if (tokens.length === 1) return BARE_OK.has(first) ? 'edit' : 'out'
+    if (first === 'translate' && !HARD_ANCHOR.test(s)) return 'out'
+    if (hasResume || deictic || style) {
+      if (!hasResume && tokens.length <= 8 && /\b(about|regarding|related to|concerning)\b/.test(s)) return 'out'
+      return 'edit'
+    }
+    return 'out'
+  }
+  if (/^(be|sound|read|look)\b/.test(first) && style) return 'edit'
+  if (tokens.length <= 6 && (hasResume || style) && !tokens.some(t => NONEDIT_ACTIONS.has(t))) return 'edit'
+  if (tokens.length > 6 && !tokens.some((t, i) => i < 2 && NONEDIT_ACTIONS.has(t))) return 'neutral'
+  if (/^(i|it|that|this|they|recruiters?|everyone|people|my resume|the resume)\b/.test(s) && tokens.length <= 8) return 'neutral'
+  return 'out'
+}
+
+function refusalFor(parts: string[]): string {
+  const shown = parts.slice(0, 2).map(p => `"${p.length > 40 ? p.slice(0, 39) + '…' : p}"`).join(' and ')
+  return `I can only work on your resume, so I did not run this request. Not about your resume: ${shown}. Resend just the resume part, for example "make this stronger", and I will do it.`
+}
+
 export function classifyScope(prompt: string, doc?: { text: string }): ScopeResult {
   try {
     const raw = typeof prompt === 'string' ? prompt : ''
-    const p = raw.toLowerCase().replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim()
+    let folded = raw
+    try { folded = raw.normalize('NFKC') } catch { /* ignore */ }
+    const p = folded.toLowerCase().replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[ \t\r\f\v]+/g, ' ').replace(/ ?\n ?/g, '\n').trim()
     if (!p) return deny('empty prompt')
-    if (p.length > 600) return deny('prompt too long to be a resume edit command')
+    if (p.length > 6000) return deny('prompt too long to be a resume edit command')
 
     for (const re of JAILBREAK) if (re.test(p)) return deny('attempts to change or extract the assistant instructions')
     for (const re of OFF_TASK) if (re.test(p)) return deny('request is not about editing the resume')
+    for (const re of EXTRA_DENY) if (re.test(p)) return deny('request includes something other than editing the resume')
     if (COVER.test(p)) return deny('cover letters are out of scope')
-    if (/\blinkedin\b/.test(p) && !/\b(resume|cv)\b/.test(p)) return deny('request is about another document')
     if (/\b(my|the|this) (essay|paper|report|thesis|article|blog|email|e-mail|letter|post|presentation|slides?|deck|proposal|assignment|homework|code|script|website|app|document)\b/.test(p) && !/\b(resume|cv|r[ée]sum[ée])\b/.test(p)) {
       return deny('request is about another document')
     }
 
-    if (DEICTIC_ONLY.test(p.replace(/\bto (be|sound|read|look|feel) /, ''))) return allow('short command about the current target')
-    if (SHORT_ACTION.test(p)) return allow('short resume command')
-    if (STYLE_REQ.test(p) || SOUND_REQ.test(p) || ONE_LINER.test(p) || BARE_ADJ.test(p)) return allow('short resume command')
-    if (/^(quantify|add (real )?(numbers?|metrics?|figures?|stats))( to)? (this|it|that|these|the|my)\b/.test(p)) return allow('quantify request')
-    for (const re of QUESTION_FORMS) if (re.test(p) && (NARROW_ANCHOR.test(p) || /\b(it|this|that|these|my)\b/.test(p))) return allow('question about the resume')
-
-    const hasAnchor = ANCHOR.test(p) || CONTACT.test(p)
     const names = doc && typeof doc.text === 'string' ? docNames(doc.text) : []
-    const hasName = names.length > 0 && mentionsName(p, names)
-
-    if (hasAnchor && EDIT_VERB.test(p)) {
-      // bare "summary" / "objective" must be about the user's own summary
-      const onlyWeak = !NARROW_ANCHOR.test(p) && !hasName
-      if (onlyWeak && !/\b(my|this|the|these|those|our)\b/.test(p) && !RESUME_REWRITE.test(p)) return deny('no clear link to the resume')
-      return allow('actionable request about the resume')
+    const clauses = splitClauses(p)
+    const outParts: string[] = []
+    const inParts: string[] = []
+    let edits = 0
+    for (const clause of clauses) {
+      const v = classifyClause(clause, names)
+      if (v === 'out') outParts.push(clause)
+      else if (v === 'edit') { edits++; inParts.push(clause) }
     }
-    if (hasName && MUTATING_VERB.test(p)) return allow('actionable request about an employer, school or project in the resume')
-    if (hasName && /\b(bullets?|job|role|section|work|time|experience|stint|internship|position)\b/.test(p)) return allow('mentions a role in the resume')
-
-    return deny('not an actionable request about the resume')
+    if (outParts.length) {
+      const r = deny(clauses.length > 1 ? 'part of the request is not about the resume' : 'not an actionable request about the resume')
+      if (clauses.length > 1) { r.refusal = refusalFor(outParts); r.outOfScopeParts = outParts; r.inScopeParts = inParts }
+      return r
+    }
+    if (!edits) return deny('not an actionable request about the resume')
+    return { inScope: true, reason: clauses.length > 1 ? 'every part of the request is about the resume' : 'actionable request about the resume', inScopeParts: inParts }
   } catch {
     return deny('could not classify the request')
   }

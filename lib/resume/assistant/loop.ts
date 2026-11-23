@@ -11,7 +11,7 @@ import type { Intent } from './intent'
 import { resolveTarget } from './context'
 import type { Target, DocInput } from './context'
 import { buildMessages, SYSTEM_PROMPT, OUT_OF_SCOPE } from './prompt'
-import { verifyRewrite } from './guard'
+import { verifyRewrite, foldText, wordCount } from './guard'
 import type { GuardOptions } from './guard'
 import type { ModelClient } from './model'
 
@@ -27,6 +27,10 @@ export interface AssistantInput {
   now?: Date
   /** Ask the model to double-check each verified candidate (must answer exactly PASS). Off by default. */
   selfCritic?: boolean
+  /** Per model call. Default 30000. A call that does not answer in time is treated as a model failure. */
+  timeoutMs?: number
+  /** Cancels the run: the model call is aborted and the result is 'failed' (nothing proposed). */
+  signal?: AbortSignal
 }
 
 export interface AssistantResult {
@@ -74,9 +78,40 @@ function regressionViolations(ctx: Ctx, from: number, to: number, candidate: str
   if (ctx.before && ctx.criteria.length) {
     const r = evaluateCriteria(after, ctx.criteria, { now: ctx.now })
     const cmp = compareReports(ctx.before, r)
+    const reported = new Set<string>()
     cmp.regressed.forEach(id => {
       const res = r.results.find(x => x.criterion.id === id)
+      reported.add(id)
       out.push({ rule: 'criteria-regression', message: `The edit breaks your criterion "${res ? res.criterion.text : id}"${res ? ': ' + res.detail : ''}` })
+    })
+    // per location: a criterion that already fails elsewhere must not get worse inside the edited slice
+    const beforeSlice = ctx.text.slice(from, to)
+    ctx.criteria.forEach(c => {
+      if (reported.has(c.id)) return
+      const b = ctx.before!.results.find(x => x.criterion.id === c.id)
+      const a = r.results.find(x => x.criterion.id === c.id)
+      if (!b || !a) return
+      if (c.kind === 'max-bullet-length' || c.kind === 'max-words-per-bullet') {
+        const limit = Number(c.params.max)
+        if (!isFinite(limit)) return
+        const measure = (t: string) => {
+          const lines = t.replace(/\r/g, '').split('\n').filter(l => l.trim())
+          const marked = lines.filter(l => BULLET.test(l))
+          return (marked.length ? marked : lines).map(l => l.replace(BULLET, '').trim()).map(l => (c.kind === 'max-bullet-length' ? l.length : wordCount(l)))
+        }
+        const beforeMax = Math.max.apply(null, [0].concat(measure(beforeSlice)))
+        const candMax = Math.max.apply(null, [0].concat(measure(candidate)))
+        if (candMax > limit && candMax > beforeMax) {
+          reported.add(c.id)
+          out.push({ rule: 'criteria-regression', message: `The edit breaks your criterion "${c.text}": a bullet would have ${candMax} ${c.kind === 'max-bullet-length' ? 'characters' : 'words'} (limit ${limit}).` })
+        }
+        return
+      }
+      if (!b.pass && !a.pass) {
+        const inBefore = b.locations.filter(l => l.from >= from && l.to <= to).length
+        const inAfter = a.locations.filter(l => l.from >= from && l.to <= from + candidate.length).length
+        if (inAfter > inBefore) out.push({ rule: 'criteria-regression', message: `The edit adds another place that breaks your criterion "${c.text}".` })
+      }
     })
     if (cmp.scoreDelta < 0 && !cmp.regressed.length) out.push({ rule: 'criteria-score', message: `The criteria score would drop by ${-cmp.scoreDelta}.` })
   }
@@ -89,6 +124,10 @@ function guardOptionsFor(intent: Intent, target: Target, userFacts?: string): Gu
   const o: GuardOptions = { kind, structure: free ? 'free' : 'strict' }
   if (intent.action === 'shorten' || intent.action === 'summarize') o.mustShrink = true
   if (userFacts) o.allow = userFacts
+  const pr = intent.params || {}
+  if (typeof pr.maxWords === 'number') o.maxWords = pr.maxWords
+  if (typeof pr.maxChars === 'number') o.maxChars = pr.maxChars
+  if (typeof pr.lines === 'number') o.maxLines = pr.lines
   return o
 }
 
@@ -110,6 +149,44 @@ function bulletsIn(target: Target): string[] {
   return out.filter(Boolean)
 }
 
+/** Only the figures the user typed (with a unit word or two), never command words like "bullet 2". */
+export function extractFacts(prompt: string): string {
+  const s = foldText(typeof prompt === 'string' ? prompt : '')
+  const re = new RegExp('(?<![A-Za-z0-9_.])[$\u20ac\u00a3]?\\d[\\d,]*(?:\\.\\d+)?\\s?(?:(?:%|percent|k|m|b|x|thousand|million|billion)(?![A-Za-z]))?(?:\\s+[A-Za-z][A-Za-z-]*){0,2}', 'g')
+  const out: string[] = []
+  let m: RegExpExecArray | null
+  while ((m = re.exec(s))) {
+    const before = s.slice(Math.max(0, m.index - 14), m.index)
+    if (/(bullets?|points?|lines?|roles?|jobs?|items?|sections?|pages?|steps?|number|no\.?|#)\s*#?$/i.test(before)) continue
+    const cleaned = m[0].replace(/\s+(and|or|in|to|on|at|for|of|with|by|also|then|but)$/i, '').trim()
+    if (cleaned) out.push(cleaned)
+  }
+  return out.join('; ')
+}
+
+class CancelledError extends Error {}
+
+function callModel(model: ModelClient, req: Parameters<ModelClient['complete']>[0], timeoutMs: number, outer?: AbortSignal): Promise<string> {
+  const ac = new AbortController()
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let onAbort: (() => void) | undefined
+  const cleanup = () => {
+    if (timer) clearTimeout(timer)
+    if (outer && onAbort) outer.removeEventListener('abort', onAbort)
+  }
+  return new Promise<string>((resolve, reject) => {
+    timer = setTimeout(() => { ac.abort(); reject(new Error(`the model did not answer within ${timeoutMs} ms`)) }, timeoutMs)
+    if (outer) {
+      if (outer.aborted) { reject(new CancelledError('cancelled')); return }
+      onAbort = () => { ac.abort(); reject(new CancelledError('cancelled')) }
+      outer.addEventListener('abort', onAbort)
+    }
+    try {
+      Promise.resolve(model.complete({ ...req, signal: ac.signal })).then(resolve, reject)
+    } catch (e) { reject(e) }
+  }).then(v => { cleanup(); return v }, e => { cleanup(); throw e })
+}
+
 export async function runAssistant(input: AssistantInput): Promise<AssistantResult> {
   const trace: TraceStep[] = []
   const step = (name: string, ok: boolean, detail: string) => { trace.push({ step: name, ok, detail }) }
@@ -125,7 +202,8 @@ async function runInner(input: AssistantInput, trace: TraceStep[], step: (n: str
   const prompt = typeof input.prompt === 'string' ? input.prompt : ''
   const doc: DocInput = input.doc && typeof input.doc.text === 'string' ? input.doc : { text: '' }
   const now = input.now instanceof Date ? input.now : new Date()
-  const maxIter = Math.max(1, Math.min(6, Math.floor(input.maxIterations ?? 3)))
+  const mi = input.maxIterations
+  const maxIter = typeof mi === 'number' && isFinite(mi) && Number.isInteger(mi) && mi >= 1 ? Math.min(6, mi) : 3
   const model = input.model
 
   // 1. scope guard: deterministic, before any model call
@@ -134,10 +212,16 @@ async function runInner(input: AssistantInput, trace: TraceStep[], step: (n: str
   if (!scope.inScope) return { status: 'refused', message: scope.refusal || REFUSAL, trace }
 
   // 2. intent, 3. target
-  const intent = parseIntent(prompt)
+  let intent = parseIntent(scope.inScopeParts && scope.inScopeParts.length > 1 ? scope.inScopeParts.join('; ') : prompt)
+  if (intent.action === 'unknown' && !intent.params.expand) intent = parseIntent(prompt)
   step('intent', intent.action !== 'unknown', `${intent.action} ${JSON.stringify(intent.params)}`)
   let target = resolveTarget(prompt, doc)
   step('target', true, `${target.kind} "${target.label}" [${target.from}, ${target.to}]${target.ambiguous ? ' ambiguous: ' + target.ambiguous.join(' | ') : ''}`)
+
+  if (target.unresolved) {
+    step('target', false, `could not find ${target.unresolved}`)
+    return { status: 'needs-info', message: `I could not find ${target.unresolved} in your resume, so I did not touch anything. Select the text you mean, or name a role that is in the resume.`, questions: ['Which part of the resume do you mean?'], trace }
+  }
 
   const inj = looksLikeInjection(target.text)
   if (inj) step('injection-scan', false, 'The text contains instruction-like content. It is treated as plain resume data and never followed.')
@@ -267,10 +351,11 @@ async function runInner(input: AssistantInput, trace: TraceStep[], step: (n: str
     }
 
     case 'quantify': {
-      const hasDigits = /\d/.test(prompt)
+      const facts = extractFacts(prompt)
+      const hasDigits = facts.length > 0
       if (hasDigits && model) {
         if (target.kind === 'document') return { status: 'needs-info', message: 'Which bullet should the figures go into? Select it or name the role.', questions: ['Which bullet or role is this about?'], trace }
-        return modelPath(intent, target, { userFacts: prompt }, ctx, input, trace, step, maxIter, ambiguousNote)
+        return modelPath(intent, target, { userFacts: facts }, ctx, input, trace, step, maxIter, ambiguousNote)
       }
       if (hasDigits && !model) {
         step('model', false, 'no model supplied')
@@ -326,6 +411,28 @@ async function runInner(input: AssistantInput, trace: TraceStep[], step: (n: str
       return modelPath(intent, target, {}, ctx, input, trace, step, maxIter, ambiguousNote)
     }
 
+    case 'unknown': {
+      if (intent.params.expand) {
+        if (target.kind === 'document') return { status: 'needs-info', message: 'Which part should be fuller? Select a bullet or name a role.', questions: ['Which bullet or role should I expand?'], trace }
+        if (!model) {
+          step('model', false, 'no model supplied')
+          return { status: 'needs-info', message: `Expanding ${target.label} needs a language model, and none is connected. I would only restate facts already there, never add new ones.`, trace }
+        }
+        const r = await modelPath({ action: 'rewrite', params: { ...intent.params, expand: true } }, target, {}, ctx, input, trace, step, maxIter, ambiguousNote)
+        if (r.status === 'unchanged') {
+          return { status: 'needs-info', message: `I cannot make ${target.label} fuller without inventing facts. Tell me what is missing and I will work it in.`, questions: ['What did you do, with which tools or people?', 'What was the result?'], trace }
+        }
+        return r
+      }
+      step('intent', false, 'could not tell what to do')
+      return {
+        status: 'needs-info',
+        message: `I could not tell what you want done to ${target.label}. I can make it stronger, shorten it, fix problems, tailor it to a job posting, ask for real numbers, or check your criteria.`,
+        questions: ['What should I do: strengthen, shorten, fix, tailor, quantify or check?'],
+        trace,
+      }
+    }
+
     default: {
       step('intent', false, 'could not tell what to do')
       return {
@@ -351,6 +458,12 @@ async function modelPath(
   const unmet: string[] = []
   let feedback: string[] = []
   let previous: string | undefined
+  const warnings: string[] = []
+  let attempts = 0
+  let onlyIdentical = true
+  const eol = ctx.text.indexOf('\r\n') >= 0 ? '\r\n' : '\n'
+  const tm = input.timeoutMs
+  const timeoutMs = typeof tm === 'number' && isFinite(tm) && tm > 0 ? tm : 30000
 
   for (let i = 1; i <= maxIter; i++) {
     const messages = buildMessages({
@@ -359,8 +472,12 @@ async function modelPath(
     })
     let raw: string
     try {
-      raw = await model.complete({ system: SYSTEM_PROMPT, messages, maxTokens: Math.min(2000, Math.max(256, Math.ceil(target.text.length / 2) + 200)), temperature: 0.2 })
+      raw = await callModel(model, { system: SYSTEM_PROMPT, messages, maxTokens: Math.min(2000, Math.max(256, Math.ceil(target.text.length / 2) + 200)), temperature: 0.2 }, timeoutMs, input.signal)
     } catch (e) {
+      if (e instanceof CancelledError) {
+        step(`generate ${i}`, false, 'cancelled by the caller')
+        return { status: 'failed', message: 'Cancelled. Nothing was changed.', trace }
+      }
       step(`generate ${i}`, false, `model error: ${errMsg(e)}`)
       unmet.push(`model error: ${errMsg(e)}`)
       feedback = []
@@ -368,14 +485,13 @@ async function modelPath(
       continue
     }
     raw = typeof raw === 'string' ? raw : String(raw ?? '')
-    let cand = raw.replace(/\r\n/g, '\n').replace(/^\s*\n+/, '').replace(/\s+$/, '')
-    if (target.kind === 'selection') {
-      const lead = target.text.match(/^\s*/)![0]
-      const trail = target.text.match(/\s*$/)![0]
-      cand = lead + cand.trim() + trail
-    } else {
-      cand = cand.replace(/^\s+/, '')
-    }
+    // keep the target's own leading/trailing whitespace and its line endings
+    const body = raw.replace(/\r\n/g, '\n').trim()
+    const normTarget = target.text.replace(/\r\n/g, '\n')
+    const lead = normTarget.match(/^\s*/)![0]
+    const trail = normTarget.trim() ? normTarget.match(/\s*$/)![0] : ''
+    let cand = body && body !== OUT_OF_SCOPE ? lead + body + trail : body
+    if (eol === '\r\n') cand = cand.replace(/\n/g, '\r\n')
     step(`generate ${i}`, true, snippet(cand, 80))
     previous = cand
 
@@ -386,6 +502,9 @@ async function modelPath(
 
     const v = verifyRewrite(target.text, cand, gopts)
     const violations = v.violations.slice()
+    if (v.warnings) v.warnings.forEach(w => { if (warnings.indexOf(w) < 0) warnings.push(w) })
+    attempts++
+    if (!(violations.length === 1 && violations[0].rule === 'identical')) onlyIdentical = false
     step(`verify ${i}`, v.ok, v.ok ? 'fact guard passed' : v.violations.map(x => x.rule).join(', '))
     if (v.ok) {
       const reg = regressionViolations(ctx, target.from, target.to, cand)
@@ -393,11 +512,11 @@ async function modelPath(
       violations.push(...reg)
       if (!reg.length && input.selfCritic) {
         try {
-          const ans = (await model.complete({
+          const ans = (await callModel(model, {
             system: CRITIC_SYSTEM,
             messages: [{ role: 'user', content: `<original>\n${target.text}\n</original>\n<candidate>\n${cand}\n</candidate>` }],
             maxTokens: 60, temperature: 0,
-          })).trim()
+          }, timeoutMs, input.signal)).trim()
           step(`self-critic ${i}`, ans === 'PASS', ans.slice(0, 120))
           if (ans !== 'PASS') violations.push({ rule: 'self-critic', message: `A reviewer rejected the edit: ${ans.slice(0, 160)}` })
         } catch (e) {
@@ -410,7 +529,7 @@ async function modelPath(
     if (!violations.length) {
       return {
         status: 'proposal',
-        message: `Proposed ${intent.action} for ${target.label}.${ambiguousNote} It keeps every number and name, and your criteria and checks did not get worse. Review the diff and accept to apply.`,
+        message: `Proposed ${intent.action} for ${target.label}.${ambiguousNote} It keeps every number and name, and your criteria and checks did not get worse.${warnings.length ? ' Note: ' + warnings.join(' ') : ''} Review the diff and accept to apply.`,
         proposal: { from: target.from, to: target.to, before: target.text, after: cand },
         trace,
       }
@@ -419,6 +538,10 @@ async function modelPath(
     violations.forEach(x => { if (unmet.indexOf(x.message) < 0) unmet.push(x.message) })
   }
 
+  if (attempts > 0 && onlyIdentical) {
+    step('result', true, 'the model returned the text unchanged every time')
+    return { status: 'unchanged', message: `The model left ${target.label} as it is, which usually means it is already fine or could only be improved by adding facts you have not given. Nothing was changed.`, trace }
+  }
   step('result', false, `no verified candidate after ${maxIter} attempt(s)`)
   return {
     status: 'failed',
