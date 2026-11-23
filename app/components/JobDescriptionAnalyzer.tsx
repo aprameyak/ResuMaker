@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { analyzeJobDescription } from '../../lib/resume';
 import { motion } from 'framer-motion';
 import { FiTarget } from 'react-icons/fi';
 
@@ -28,20 +29,7 @@ const JobDescriptionAnalyzer: React.FC<JobDescriptionAnalyzerProps> = ({ onAnaly
     setError(null);
 
     try {
-      const response = await fetch('/api/analyze-job-description', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ description }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to analyze job description');
-      }
-
-      const data = await response.json();
-      onAnalyze(data.data.keywords);
+      onAnalyze(analyzeJobDescription(description));
     } catch (error) {
       setError('Failed to analyze job description');
       console.error('Analysis error:', error);
@@ -68,7 +56,7 @@ const JobDescriptionAnalyzer: React.FC<JobDescriptionAnalyzerProps> = ({ onAnaly
           gap: '12px',
           marginBottom: '16px'
         }}>
-          <FiTarget style={{ width: '24px', height: '24px', color: '#2563eb' }} />
+          <FiTarget style={{ width: '24px', height: '24px', color: '#111111' }} />
           <h3 style={{
             fontSize: '18px',
             fontWeight: '600',
@@ -101,7 +89,7 @@ const JobDescriptionAnalyzer: React.FC<JobDescriptionAnalyzerProps> = ({ onAnaly
           style={{
             marginTop: '16px',
             padding: '12px 24px',
-            backgroundColor: isLoading ? '#9ca3af' : '#2563eb',
+            backgroundColor: isLoading ? '#9ca3af' : '#111111',
             color: 'white',
             borderRadius: '8px',
             border: 'none',

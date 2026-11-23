@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { parseResume } from '../../lib/resume';
 import { motion } from 'framer-motion';
 import { FiFileText } from 'react-icons/fi';
 
@@ -47,20 +48,8 @@ const ResumeParser: React.FC<ResumeParserProps> = ({ onParse }) => {
     setError(null);
 
     try {
-      const response = await fetch('/api/parse-resume', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to parse resume');
-      }
-
-      const data = await response.json();
-      onParse(data.data);
+      const data = parseResume(content);
+      onParse(data);
     } catch (error) {
       setError('Failed to parse resume');
       console.error('Parse error:', error);
@@ -87,7 +76,7 @@ const ResumeParser: React.FC<ResumeParserProps> = ({ onParse }) => {
           gap: '12px',
           marginBottom: '16px'
         }}>
-          <FiFileText style={{ width: '24px', height: '24px', color: '#2563eb' }} />
+          <FiFileText style={{ width: '24px', height: '24px', color: '#111111' }} />
           <h3 style={{
             fontSize: '18px',
             fontWeight: '600',
@@ -120,7 +109,7 @@ const ResumeParser: React.FC<ResumeParserProps> = ({ onParse }) => {
           style={{
             marginTop: '16px',
             padding: '12px 24px',
-            backgroundColor: isLoading ? '#9ca3af' : '#2563eb',
+            backgroundColor: isLoading ? '#9ca3af' : '#111111',
             color: 'white',
             borderRadius: '8px',
             border: 'none',

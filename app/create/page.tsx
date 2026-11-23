@@ -6,6 +6,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import ResumeEditor from '../components/ResumeEditor';
 import ResumeTemplates from '../components/ResumeTemplates';
 import { SECTION_TYPES, SectionType } from '../constants';
+import { toEditorSections } from '../../lib/resume';
+import type { ParsedResume, ResumeHeader } from '../../lib/resume';
+import ResumePreview from '../components/ResumePreview';
+import PrintRoot from '../components/PrintRoot';
 import { FiHelpCircle, FiArrowLeft, FiEye } from 'react-icons/fi';
 
 // Force dynamic rendering for auth-protected pages
@@ -31,12 +35,29 @@ export default function CreatePage() {
     }
   ]);
   const [showHelp, setShowHelp] = useState<boolean>(false);
+  const [showPreview, setShowPreview] = useState<boolean>(false);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('resumaker:imported');
+      if (!saved) return;
+      sessionStorage.removeItem('resumaker:imported');
+      const payload = JSON.parse(saved) as { parsed: ParsedResume; header?: ResumeHeader };
+      const imported = toEditorSections(payload.parsed, payload.header);
+      if (imported.length) {
+        setSections(imported);
+        setShowTemplates(false);
+      }
+    } catch (error) {
+      console.error('Could not load imported resume:', error);
+    }
+  }, []);
 
   const handleSelectTemplate = (templateSections: Section[]) => {
     setSections(templateSections);
@@ -65,21 +86,8 @@ export default function CreatePage() {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{
-          width: '48px',
-          height: '48px',
-          border: '4px solid #e5e7eb',
-          borderTop: '4px solid #2563eb',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
+      <div className="container page-section">
+        <p className="muted">Loading...</p>
       </div>
     );
   }
@@ -89,149 +97,85 @@ export default function CreatePage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
-      padding: '80px 16px 64px 16px'
-    }}>
+    <div className="container page-section">
       <div style={{
-        maxWidth: '1280px',
-        margin: '0 auto'
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '16px',
+        marginBottom: '24px'
       }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '48px'
-        }}>
-          <h1 style={{
-            fontSize: '48px',
-            fontWeight: 'bold',
-            color: '#111827'
-          }}>
-            Create Your Resume
-          </h1>
-          <button 
-            onClick={() => setShowHelp(!showHelp)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: 'none',
-              border: 'none',
-              color: '#2563eb',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '500'
-            }}
-          >
-            <FiHelpCircle style={{ marginRight: '8px', width: '20px', height: '20px' }} />
-            Help
-          </button>
-        </div>
-
-        {showHelp && (
-          <div style={{
-            backgroundColor: '#dbeafe',
-            border: '1px solid #93c5fd',
-            borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '32px'
-          }}>
-            <h3 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              color: '#1e40af',
-              marginBottom: '16px'
-            }}>
-              Tips for a Great Resume
-            </h3>
-            <ul style={{
-              listStyle: 'disc',
-              paddingLeft: '24px',
-              color: '#1e40af',
-              fontSize: '16px',
-              lineHeight: '1.6'
-            }}>
-              <li style={{ marginBottom: '8px' }}>Keep your resume concise and relevant - one to two pages maximum</li>
-              <li style={{ marginBottom: '8px' }}>Quantify achievements with numbers when possible (e.g., "Increased sales by 25%")</li>
-              <li style={{ marginBottom: '8px' }}>Tailor your resume for each job application by matching keywords from the job description</li>
-              <li style={{ marginBottom: '8px' }}>Use action verbs to describe your responsibilities and achievements</li>
-              <li>Proofread carefully for spelling and grammar errors</li>
-            </ul>
-          </div>
-        )}
-
-        {showTemplates ? (
-          <ResumeTemplates onSelectTemplate={handleSelectTemplate} />
-        ) : (
-          <>
-            <p style={{
-              fontSize: '20px',
-              color: '#4b5563',
-              marginBottom: '32px',
-              textAlign: 'center',
-              maxWidth: '800px',
-              margin: '0 auto 32px auto'
-            }}>
-              Build your resume by adding or editing sections below. You can preview and export when ready.
-            </p>
-            <ResumeEditor 
-              sections={sections}
-              onUpdate={handleUpdate}
-              onAdd={handleAdd}
-              onDelete={handleDelete}
-            />
-            <div style={{
-              marginTop: '48px',
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '16px',
-              flexWrap: 'wrap'
-            }}>
-              <button
-                onClick={() => setShowTemplates(true)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '16px 32px',
-                  fontSize: '18px',
-                  fontWeight: '500',
-                  color: '#2563eb',
-                  backgroundColor: 'transparent',
-                  border: '1px solid #2563eb',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <FiArrowLeft style={{ marginRight: '8px', width: '20px', height: '20px' }} />
-                Back to Templates
-              </button>
-              <button
-                onClick={() => router.push('/preview')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '16px 32px',
-                  fontSize: '18px',
-                  fontWeight: '500',
-                  color: 'white',
-                  backgroundColor: '#16a34a',
-                  border: '1px solid transparent',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
-                }}
-              >
-                <FiEye style={{ marginRight: '8px', width: '20px', height: '20px' }} />
-                Preview & Export
-              </button>
-            </div>
-          </>
-        )}
+        <h1>Create your resume</h1>
+        <button
+          onClick={() => setShowHelp(!showHelp)}
+          className="btn-secondary"
+          aria-expanded={showHelp}
+          style={{ minHeight: '40px', padding: '6px 14px' }}
+        >
+          <FiHelpCircle aria-hidden="true" style={{ width: '16px', height: '16px' }} />
+          Help
+        </button>
       </div>
+
+      {showHelp && (
+        <div className="panel" style={{ marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '17px', marginBottom: '8px' }}>Tips for a clear resume</h2>
+          <ul className="secondary" style={{ paddingLeft: '20px', lineHeight: 1.6 }}>
+            <li>Keep it to one or two pages.</li>
+            <li>Quantify results where you can (for example, "reduced load time by 30%").</li>
+            <li>Match the wording of the job posting where it is true for you.</li>
+            <li>Start bullet points with action verbs.</li>
+            <li>Proofread for spelling and grammar.</li>
+          </ul>
+        </div>
+      )}
+
+      {showTemplates ? (
+        <ResumeTemplates onSelectTemplate={handleSelectTemplate} />
+      ) : (
+        <>
+          <p className="secondary" style={{ marginBottom: '24px' }}>
+            Edit each section below as plain text, add sections as needed, then preview and export.
+          </p>
+          <ResumeEditor
+            sections={sections}
+            onUpdate={handleUpdate}
+            onAdd={handleAdd}
+            onDelete={handleDelete}
+          />
+          <div style={{
+            marginTop: '32px',
+            display: 'flex',
+            gap: '12px',
+            flexWrap: 'wrap'
+          }}>
+            <button onClick={() => setShowTemplates(true)} className="btn-secondary">
+              <FiArrowLeft aria-hidden="true" style={{ width: '18px', height: '18px' }} />
+              Back to Templates
+            </button>
+            <button onClick={() => setShowPreview(true)} className="btn">
+              <FiEye aria-hidden="true" style={{ width: '18px', height: '18px' }} />
+              Preview & Export
+            </button>
+          </div>
+        </>
+      )}
+      {showPreview && (
+        <div style={{ marginTop: '32px' }}>
+          <div className="no-print" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+            <button onClick={() => window.print()} className="btn">
+              Save as PDF
+            </button>
+            <button onClick={() => setShowPreview(false)} className="btn-secondary">
+              Close preview
+            </button>
+          </div>
+          <ResumePreview sections={sections} />
+          <PrintRoot>
+            <pre>{sections.map(s => `${s.title.toUpperCase()}\n${s.content}`).join('\n\n')}</pre>
+          </PrintRoot>
+        </div>
+      )}
     </div>
   );
 }

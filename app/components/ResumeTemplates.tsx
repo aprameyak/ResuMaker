@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { FiBriefcase, FiFileText, FiCode, FiAward, FiStar } from 'react-icons/fi';
 import { SectionType } from '../constants';
 
 interface Section {
@@ -14,7 +13,6 @@ interface Section {
 interface Template {
   id: string;
   name: string;
-  icon: React.ReactNode;
   description: string;
   sections: Section[];
 }
@@ -27,7 +25,6 @@ const TEMPLATES: Template[] = [
   {
     id: 'professional',
     name: 'Professional',
-    icon: <FiBriefcase style={{ width: '32px', height: '32px', marginBottom: '8px' }} />,
     description: 'Traditional format ideal for most industries and career levels',
     sections: [
       { id: 'summary', type: 'summary', title: 'Professional Summary', content: 'Experienced professional with a track record of...' },
@@ -39,7 +36,6 @@ const TEMPLATES: Template[] = [
   {
     id: 'technical',
     name: 'Technical',
-    icon: <FiCode style={{ width: '32px', height: '32px', marginBottom: '8px' }} />,
     description: 'Specialized format highlighting technical skills and projects',
     sections: [
       { id: 'summary', type: 'summary', title: 'Technical Profile', content: 'Software engineer with expertise in...' },
@@ -52,7 +48,6 @@ const TEMPLATES: Template[] = [
   {
     id: 'academic',
     name: 'Academic',
-    icon: <FiAward style={{ width: '32px', height: '32px', marginBottom: '8px' }} />,
     description: 'Format for recent graduates or academic positions',
     sections: [
       { id: 'summary', type: 'summary', title: 'Academic Profile', content: 'Recent graduate with focus on...' },
@@ -65,7 +60,6 @@ const TEMPLATES: Template[] = [
   {
     id: 'minimalist',
     name: 'Minimalist',
-    icon: <FiStar style={{ width: '32px', height: '32px', marginBottom: '8px' }} />,
     description: 'Clean, concise format focusing on key achievements',
     sections: [
       { id: 'summary', type: 'summary', title: 'Profile', content: 'Concise statement about your career focus.' },
@@ -77,7 +71,6 @@ const TEMPLATES: Template[] = [
   {
     id: 'executive',
     name: 'Executive',
-    icon: <FiFileText style={{ width: '32px', height: '32px', marginBottom: '8px' }} />,
     description: 'Format for senior leaders highlighting leadership and results',
     sections: [
       { id: 'summary', type: 'summary', title: 'Executive Summary', content: 'Senior leader with proven track record of...' },
@@ -99,88 +92,49 @@ export default function ResumeTemplates({ onSelectTemplate }: ResumeTemplatesPro
 
   return (
     <div style={{ width: '100%' }}>
-      <h2 style={{
-        fontSize: '24px',
-        fontWeight: '600',
-        marginBottom: '24px',
-        color: '#111827'
-      }}>
-        Choose a Template
-      </h2>
-      <p style={{
-        color: '#4b5563',
-        marginBottom: '24px',
-        fontSize: '16px'
-      }}>
-        Select a template to get started quickly. You can customize all sections later.
+      <h2 style={{ marginBottom: '8px' }}>Choose a Template</h2>
+      <p className="secondary" style={{ marginBottom: '24px' }}>
+        Pick a starting structure. You can rename, edit, add and remove sections afterwards.
       </p>
-      
+
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
         gap: '16px',
-        marginBottom: '32px'
+        marginBottom: '24px'
       }}>
-        {TEMPLATES.map((template) => (
-          <div
-            key={template.id}
-            style={{
-              border: selectedTemplate === template.id ? '2px solid #2563eb' : '1px solid #e5e7eb',
-              borderRadius: '12px',
-              padding: '24px',
-              cursor: 'pointer',
-              backgroundColor: selectedTemplate === template.id ? '#eff6ff' : 'white',
-              transition: 'all 0.2s'
-            }}
-            onClick={() => handleSelectTemplate(template)}
-          >
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center'
-            }}>
-              {template.icon}
-              <h3 style={{
-                fontSize: '18px',
-                fontWeight: '500',
-                marginBottom: '8px',
-                color: '#111827'
-              }}>
-                {template.name}
-              </h3>
-              <p style={{
-                fontSize: '14px',
-                color: '#6b7280'
-              }}>
-                {template.description}
-              </p>
+        {TEMPLATES.map((template) => {
+          const selected = selectedTemplate === template.id;
+          return (
+            <div
+              key={template.id}
+              role="button"
+              tabIndex={0}
+              aria-pressed={selected}
+              className="card"
+              style={{
+                cursor: 'pointer',
+                borderColor: selected ? 'var(--accent)' : 'var(--border)',
+                outlineOffset: '2px',
+                boxShadow: selected ? 'inset 0 0 0 1px var(--accent)' : 'none',
+                backgroundColor: selected ? 'var(--panel)' : 'var(--bg)'
+              }}
+              onClick={() => handleSelectTemplate(template)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelectTemplate(template);
+                }
+              }}
+            >
+              <h3 style={{ marginBottom: '4px' }}>{template.name}</h3>
+              <p className="secondary" style={{ fontSize: '15px' }}>{template.description}</p>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      
-      <div style={{
-        marginTop: '32px',
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: '16px'
-      }}>
-        <button
-          onClick={() => handleSelectTemplate(TEMPLATES[0])}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: '#f3f4f6',
-            borderRadius: '8px',
-            color: '#374151',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '16px',
-            fontWeight: '500'
-          }}
-        >
-          Skip Template
-        </button>
+
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         <button
           disabled={!selectedTemplate}
           onClick={() => {
@@ -189,18 +143,12 @@ export default function ResumeTemplates({ onSelectTemplate }: ResumeTemplatesPro
               handleSelectTemplate(template);
             }
           }}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: selectedTemplate ? '#2563eb' : '#9ca3af',
-            borderRadius: '8px',
-            color: 'white',
-            border: 'none',
-            cursor: selectedTemplate ? 'pointer' : 'not-allowed',
-            fontSize: '16px',
-            fontWeight: '500'
-          }}
+          className="btn"
         >
           Use Template
+        </button>
+        <button onClick={() => handleSelectTemplate(TEMPLATES[0])} className="btn-secondary">
+          Skip Template
         </button>
       </div>
     </div>

@@ -3,7 +3,9 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
-import { FiUpload, FiTarget, FiDownload, FiArrowRight } from 'react-icons/fi';
+import PrintRoot from '../components/PrintRoot';
+import { analyzeJobDescription, matchKeywords, optimizeResume } from '../../lib/resume';
+import type { OptimizationResult } from '../../lib/resume';
 
 // Force dynamic rendering for auth-protected pages
 export const dynamic = 'force-dynamic';
@@ -15,6 +17,7 @@ export default function TailorPage() {
   const [jobDescription, setJobDescription] = useState<string>('');
   const [tailoredResume, setTailoredResume] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [report, setReport] = useState<{ before: number; after: number; result: OptimizationResult } | null>(null);
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
@@ -33,23 +36,12 @@ export default function TailorPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/tailor-resume', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          resume,
-          jobDescription,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to tailor resume');
-      }
-
-      const data = await response.json();
-      setTailoredResume(data.tailoredResume);
+      const keywords = analyzeJobDescription(jobDescription);
+      const before = matchKeywords(resume, keywords).coverage;
+      const result = optimizeResume(resume, keywords);
+      const after = matchKeywords(result.optimized, keywords).coverage;
+      setTailoredResume(result.optimized);
+      setReport({ before, after, result });
     } catch (error) {
       setError('Failed to tailor resume. Please try again.');
       console.error('Tailoring error:', error);
@@ -57,6 +49,8 @@ export default function TailorPage() {
       setIsProcessing(false);
     }
   };
+
+  const handlePrint = () => window.print();
 
   const handleDownload = () => {
     const element = document.createElement('a');
@@ -70,21 +64,8 @@ export default function TailorPage() {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{
-          width: '48px',
-          height: '48px',
-          border: '4px solid #e5e7eb',
-          borderTop: '4px solid #2563eb',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
+      <div className="container page-section">
+        <p className="muted">Loading...</p>
       </div>
     );
   }
@@ -93,248 +74,117 @@ export default function TailorPage() {
     return null;
   }
 
+  const canTailor = !isProcessing && resume.trim() && jobDescription.trim();
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
-      padding: '80px 16px 64px 16px'
-    }}>
+    <div className="container page-section">
+      <h1 style={{ marginBottom: '8px' }}>Tailor your resume</h1>
+      <p className="secondary" style={{ marginBottom: '24px', maxWidth: '720px' }}>
+        Paste your resume and a job posting. The page lists which keywords from the posting your resume
+        already contains and which it does not, using fixed rules. It only rewords text you already wrote
+        and never adds new claims.
+      </p>
+
       <div style={{
-        maxWidth: '1280px',
-        margin: '0 auto'
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))',
+        gap: '24px',
+        marginBottom: '24px'
       }}>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-            <div style={{
-              padding: '16px',
-              backgroundColor: '#dbeafe',
-              borderRadius: '50%'
-            }}>
-              <FiTarget style={{ width: '48px', height: '48px', color: '#2563eb' }} />
-            </div>
-          </div>
-          <h1 style={{
-            fontSize: '48px',
-            fontWeight: 'bold',
-            color: '#111827',
+        <div>
+          <label htmlFor="resume-text" className="label">Your resume</label>
+          <textarea
+            id="resume-text"
+            className="input"
+            value={resume}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setResume(e.target.value)}
+            placeholder="Paste your current resume content here..."
+            style={{ height: '300px' }}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="job-text" className="label">Job description</label>
+          <textarea
+            id="job-text"
+            className="input"
+            value={jobDescription}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setJobDescription(e.target.value)}
+            placeholder="Paste the job description you're applying for..."
+            style={{ height: '300px' }}
+          />
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '32px' }}>
+        <button onClick={handleTailor} disabled={!canTailor} className="btn">
+          {isProcessing ? 'Processing...' : 'Tailor Resume'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="notice notice-error" role="alert" style={{ marginBottom: '32px' }}>
+          <p style={{ color: '#dc2626' }}>{error}</p>
+        </div>
+      )}
+
+      {tailoredResume && <PrintRoot><pre>{tailoredResume}</pre></PrintRoot>}
+      {tailoredResume && (
+        <div className="no-print card">
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
             marginBottom: '16px'
           }}>
-            Tailor Your Resume
-          </h1>
-          <p style={{
-            fontSize: '20px',
-            color: '#4b5563',
-            maxWidth: '800px',
-            margin: '0 auto'
-          }}>
-            Optimize your resume for specific job opportunities. Our AI will analyze the job description 
-            and suggest improvements to better match the requirements.
-          </p>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-          gap: '32px',
-          marginBottom: '48px'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #f3f4f6',
-            padding: '32px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: '24px'
-            }}>
-              <FiUpload style={{ width: '32px', height: '32px', color: '#2563eb', marginRight: '12px' }} />
-              <h2 style={{
-                fontSize: '24px',
-                fontWeight: '600',
-                color: '#111827'
-              }}>
-                Your Resume
-              </h2>
-            </div>
-            <textarea
-              value={resume}
-              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setResume(e.target.value)}
-              placeholder="Paste your current resume content here..."
-              style={{
-                width: '100%',
-                height: '300px',
-                padding: '16px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                resize: 'none',
-                fontSize: '16px',
-                lineHeight: '1.5',
-                fontFamily: 'inherit'
-              }}
-            />
-          </div>
-
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #f3f4f6',
-            padding: '32px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: '24px'
-            }}>
-              <FiTarget style={{ width: '32px', height: '32px', color: '#16a34a', marginRight: '12px' }} />
-              <h2 style={{
-                fontSize: '24px',
-                fontWeight: '600',
-                color: '#111827'
-              }}>
-                Job Description
-              </h2>
-            </div>
-            <textarea
-              value={jobDescription}
-              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setJobDescription(e.target.value)}
-              placeholder="Paste the job description you're applying for..."
-              style={{
-                width: '100%',
-                height: '300px',
-                padding: '16px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                resize: 'none',
-                fontSize: '16px',
-                lineHeight: '1.5',
-                fontFamily: 'inherit'
-              }}
-            />
-          </div>
-        </div>
-
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <button
-            onClick={handleTailor}
-            disabled={isProcessing || !resume.trim() || !jobDescription.trim()}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px 40px',
-              fontSize: '20px',
-              fontWeight: '600',
-              color: 'white',
-              backgroundColor: isProcessing || !resume.trim() || !jobDescription.trim() ? '#9ca3af' : '#2563eb',
-              border: '1px solid transparent',
-              borderRadius: '12px',
-              cursor: isProcessing || !resume.trim() || !jobDescription.trim() ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            {isProcessing ? (
-              <>
-                <div style={{
-                  width: '24px',
-                  height: '24px',
-                  border: '3px solid #ffffff40',
-                  borderTop: '3px solid white',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                  marginRight: '12px'
-                }}></div>
-                Processing...
-              </>
-            ) : (
-              <>
-                <FiTarget style={{ marginRight: '12px', width: '24px', height: '24px' }} />
-                Tailor Resume
-              </>
-            )}
-          </button>
-        </div>
-
-        {error && (
-          <div style={{
-            maxWidth: '600px',
-            margin: '0 auto 48px auto',
-            padding: '20px',
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '12px'
-          }}>
-            <p style={{ color: '#dc2626', textAlign: 'center', fontSize: '16px' }}>{error}</p>
-          </div>
-        )}
-
-        {tailoredResume && (
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #f3f4f6',
-            padding: '32px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '24px'
-            }}>
-              <h2 style={{
-                fontSize: '28px',
-                fontWeight: '600',
-                color: '#16a34a'
-              }}>
-                Tailored Resume
-              </h2>
-              <button
-                onClick={handleDownload}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '12px 24px',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  color: 'white',
-                  backgroundColor: '#16a34a',
-                  border: '1px solid transparent',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
-                }}
-              >
-                <FiDownload style={{ marginRight: '8px', width: '20px', height: '20px' }} />
-                Download
+            <h2>Tailored Resume</h2>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <button onClick={handleDownload} className="btn">
+                Download .txt
+              </button>
+              <button onClick={handlePrint} className="btn-secondary">
+                Save as PDF
               </button>
             </div>
-            <div style={{
-              backgroundColor: '#f9fafb',
-              borderRadius: '12px',
-              padding: '24px',
-              maxHeight: '400px',
-              overflowY: 'auto',
-              border: '1px solid #e5e7eb'
-            }}>
-              <pre style={{
-                whiteSpace: 'pre-wrap',
-                fontSize: '16px',
-                lineHeight: '1.6',
-                color: '#374151',
-                margin: 0,
-                fontFamily: 'inherit'
-              }}>
-                {tailoredResume}
-              </pre>
-            </div>
           </div>
-        )}
-      </div>
+          {report && (
+            <div className="no-print" style={{ marginBottom: '16px', fontSize: '15px', color: 'var(--text)', lineHeight: 1.6 }}>
+              <p>
+                Keyword match: <strong>{report.before}%</strong> before, <strong>{report.after}%</strong> after.
+                Only wording you already had was changed; nothing was added.
+              </p>
+              {report.result.matched.length > 0 && (
+                <p><strong style={{ color: 'var(--success)' }}>Found in your resume:</strong> {report.result.matched.join(', ')}</p>
+              )}
+              {report.result.missing.length > 0 && (
+                <p><strong style={{ color: 'var(--error)' }}>Not in your resume:</strong> {report.result.missing.join(', ')}. Add these only if they are true for you.</p>
+              )}
+              {report.result.changes.length > 0 && (
+                <ul style={{ margin: '8px 0 0 20px' }}>
+                  {Array.from(new Set(report.result.changes.map(c => c.explanation))).map((text, i) => (
+                    <li key={i}>{text}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          <div className="panel" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <pre style={{
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'anywhere',
+              fontSize: '15px',
+              lineHeight: 1.6,
+              color: 'var(--text)',
+              margin: 0,
+              fontFamily: 'inherit'
+            }}>
+              {tailoredResume}
+            </pre>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

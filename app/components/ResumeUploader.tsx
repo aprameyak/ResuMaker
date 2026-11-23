@@ -79,7 +79,7 @@ const ResumeUploader: React.FC<ResumeUploaderProps> = ({ onUpload }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: '12px 24px',
-                backgroundColor: '#2563eb',
+                backgroundColor: '#111111',
                 color: 'white',
                 borderRadius: '8px',
                 cursor: 'pointer',
@@ -95,7 +95,7 @@ const ResumeUploader: React.FC<ResumeUploaderProps> = ({ onUpload }) => {
             <FiFile style={{
               width: '32px',
               height: '32px',
-              color: '#2563eb',
+              color: '#111111',
               margin: '0 auto 16px auto',
               display: 'block'
             }} />
@@ -111,7 +111,7 @@ const ResumeUploader: React.FC<ResumeUploaderProps> = ({ onUpload }) => {
               disabled={isLoading}
               style={{
                 padding: '12px 24px',
-                backgroundColor: isLoading ? '#9ca3af' : '#16a34a',
+                backgroundColor: isLoading ? '#9ca3af' : '#1a6b3a',
                 color: 'white',
                 borderRadius: '8px',
                 border: 'none',

@@ -63,131 +63,90 @@ function AuthForm() {
     return null
   }
 
+  const field = (id: string, label: string, props: Record<string, unknown>, hint?: string) => (
+    <div>
+      <label htmlFor={id} className="label">
+        {label}{hint && <span className="muted" style={{ fontWeight: 400 }}> {hint}</span>}
+      </label>
+      <input id={id} className="input" {...props} />
+    </div>
+  )
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-            <button
-              onClick={() => {
-                setIsSignUp(!isSignUp)
-                setError('')
-                setMessage('')
-              }}
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              {isSignUp ? 'Sign in' : 'Sign up'}
-            </button>
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            {isSignUp && (
-              <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                  Full Name
-                </label>
-                <input
-                  id="fullName"
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Full name"
-                />
-              </div>
-            )}
-            
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Email address"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password {isSignUp && <span className="text-xs text-gray-500">(min. 6 characters)</span>}
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Password"
-              />
-            </div>
-            
-            {isSignUp && (
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                  Confirm Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  required
-                  minLength={6}
-                  value={confirmPassword}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Confirm password"
-                />
-              </div>
-            )}
-          </div>
+    <div className="container" style={{ maxWidth: '440px', paddingTop: '56px', paddingBottom: '72px' }}>
+      <h1 style={{ fontSize: '28px', marginBottom: '8px' }}>
+        {isSignUp ? 'Create your account' : 'Sign in to your account'}
+      </h1>
+      <p className="secondary" style={{ marginBottom: '24px' }}>
+        {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+        <button
+          type="button"
+          onClick={() => {
+            setIsSignUp(!isSignUp)
+            setError('')
+            setMessage('')
+          }}
+          className="link"
+          style={{ fontWeight: 600 }}
+        >
+          {isSignUp ? 'Sign in' : 'Sign up'}
+        </button>
+      </p>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-          
-          {message && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-4">
-              <p className="text-green-600 text-sm">{message}</p>
-            </div>
-          )}
+      <form className="card" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {isSignUp && field('fullName', 'Full name', {
+          type: 'text',
+          required: true,
+          value: fullName,
+          autoComplete: 'name',
+          onChange: (e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value),
+        })}
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? 'Loading...' : (isSignUp ? 'Sign up' : 'Sign in')}
-            </button>
-          </div>
-        </form>
-      </div>
+        {field('email', 'Email address', {
+          type: 'email',
+          required: true,
+          value: email,
+          autoComplete: 'email',
+          onChange: (e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
+        })}
+
+        {field('password', 'Password', {
+          type: 'password',
+          required: true,
+          minLength: 6,
+          value: password,
+          autoComplete: isSignUp ? 'new-password' : 'current-password',
+          onChange: (e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
+        }, isSignUp ? '(at least 6 characters)' : undefined)}
+
+        {isSignUp && field('confirmPassword', 'Confirm password', {
+          type: 'password',
+          required: true,
+          minLength: 6,
+          value: confirmPassword,
+          autoComplete: 'new-password',
+          onChange: (e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value),
+        })}
+
+        {error && (
+          <div className="notice notice-error" role="alert">{error}</div>
+        )}
+
+        {message && (
+          <div className="notice notice-success" role="status">{message}</div>
+        )}
+
+        <button type="submit" disabled={loading} className="btn" style={{ width: '100%' }}>
+          {loading ? 'Loading...' : (isSignUp ? 'Sign up' : 'Sign in')}
+        </button>
+      </form>
     </div>
   )
 }
 
 export default function AuthPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    }>
+    <Suspense fallback={<div className="container" style={{ paddingTop: '56px' }}><p className="muted">Loading...</p></div>}>
       <AuthForm />
     </Suspense>
   )

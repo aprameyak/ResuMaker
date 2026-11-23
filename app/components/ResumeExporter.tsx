@@ -46,7 +46,7 @@ const ResumeExporter: React.FC<ResumeExporterProps> = ({ sections }) => {
           justifyContent: 'center',
           gap: '8px',
           padding: '12px 24px',
-          backgroundColor: '#2563eb',
+          backgroundColor: '#111111',
           color: 'white',
           borderRadius: '8px',
           border: 'none',

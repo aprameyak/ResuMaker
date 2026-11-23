@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { optimizeResume } from '../../lib/resume';
 import { motion } from 'framer-motion';
 import { FiZap } from 'react-icons/fi';
 
@@ -10,6 +11,8 @@ interface Keywords {
 }
 
 interface OptimizationResult {
+  missing?: string[];
+  matched?: string[];
   optimized: string;
   changes: Array<{
     original: string;
@@ -43,20 +46,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ content, onOptimize }
     setError(null);
 
     try {
-      const response = await fetch('/api/optimize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content, keywords }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to optimize resume');
-      }
-
-      const data = await response.json();
-      onOptimize(data.data);
+      onOptimize(optimizeResume(content, keywords));
     } catch (error) {
       setError('Failed to optimize resume');
       console.error('Optimization error:', error);
@@ -88,7 +78,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ content, onOptimize }
           gap: '12px',
           marginBottom: '16px'
         }}>
-          <FiZap style={{ width: '24px', height: '24px', color: '#2563eb' }} />
+          <FiZap style={{ width: '24px', height: '24px', color: '#111111' }} />
           <h3 style={{
             fontSize: '18px',
             fontWeight: '600',
@@ -206,7 +196,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ content, onOptimize }
           style={{
             marginTop: '16px',
             padding: '12px 24px',
-            backgroundColor: isLoading ? '#9ca3af' : '#2563eb',
+            backgroundColor: isLoading ? '#9ca3af' : '#111111',
             color: 'white',
             borderRadius: '8px',
             border: 'none',

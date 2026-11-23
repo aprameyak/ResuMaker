@@ -42,7 +42,7 @@ const ResumeDownloader: React.FC<ResumeDownloaderProps> = ({ sections }) => {
           justifyContent: 'center',
           gap: '8px',
           padding: '12px 24px',
-          backgroundColor: '#16a34a',
+          backgroundColor: '#1a6b3a',
           color: 'white',
           borderRadius: '8px',
           border: 'none',

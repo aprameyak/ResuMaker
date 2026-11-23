@@ -40,12 +40,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUpload }) => {
       <div
         {...getRootProps()}
         style={{
-          border: `2px dashed ${isDragActive ? '#2563eb' : '#d1d5db'}`,
+          border: `2px dashed ${isDragActive ? '#111111' : '#d1d5db'}`,
           borderRadius: '12px',
           padding: '32px',
           textAlign: 'center',
           cursor: 'pointer',
-          backgroundColor: isDragActive ? '#eff6ff' : 'white',
+          backgroundColor: isDragActive ? '#f7f7f8' : 'white',
           transition: 'all 0.2s'
         }}
       >

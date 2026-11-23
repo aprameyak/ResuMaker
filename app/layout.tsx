@@ -5,8 +5,8 @@ import { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata = {
-  title: 'ResuMaker - AI-Powered Resume Builder',
-  description: 'Create, optimize, and tailor your resume with AI assistance',
+  title: 'ResuMaker - Resume editor and job matcher',
+  description: 'Edit a resume as plain text, check it against your own rules, match it to a job posting, and export a text-based PDF.',
   icons: {
     icon: '/icon.svg',
     shortcut: '/icon.svg',
@@ -22,33 +22,11 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
-      <head>
-        <style>{`
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background-color: #f9fafb;
-            color: #111827;
-            line-height: 1.6;
-          }
-          
-          .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 16px;
-          }
-        `}</style>
-      </head>
       <body>
         <AuthProvider>
           <ErrorBoundary>
             <Navigation />
-            <main style={{ padding: '16px 0' }}>
+            <main>
               {children}
             </main>
           </ErrorBoundary>

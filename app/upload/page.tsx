@@ -3,15 +3,15 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
-import { FiUpload, FiFile, FiX, FiArrowRight, FiCheck } from 'react-icons/fi';
+import { extractFileText } from '../../lib/resume/extract';
+import { parseResume, parseHeader } from '../../lib/resume';
+import type { ParsedResume } from '../../lib/resume';
+import { FiFile, FiX, FiArrowRight } from 'react-icons/fi';
 
 // Force dynamic rendering for auth-protected pages
 export const dynamic = 'force-dynamic';
 
-interface ParsedData {
-  // Add specific properties based on your API response
-  [key: string]: any;
-}
+type ParsedData = ParsedResume;
 
 export default function UploadPage() {
   const router = useRouter();
@@ -30,11 +30,11 @@ export default function UploadPage() {
   const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.type === 'application/pdf' || selectedFile.name.endsWith('.pdf')) {
+      if (/\.(pdf|docx|txt)$/i.test(selectedFile.name)) {
         setFile(selectedFile);
         setError('');
       } else {
-        setError('Please select a PDF file');
+        setError('Please select a PDF, DOCX or TXT file');
       }
     }
   };
@@ -45,23 +45,14 @@ export default function UploadPage() {
     setUploading(true);
     setError('');
 
-    const formData = new FormData();
-    formData.append('resume', file);
-
     try {
-      const response = await fetch('/api/parse-resume', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to parse resume');
-      }
-
-      const data = await response.json();
-      setParsedData(data);
+      const text = await extractFileText(file);
+      if (!text) throw new Error(/\.pdf$/i.test(file.name) ? 'No text found. Scanned or image-only PDFs cannot be read.' : 'No text found in this file.');
+      const parsed = parseResume(text);
+      sessionStorage.setItem('resumaker:imported', JSON.stringify({ parsed, header: parseHeader(text) }));
+      setParsedData(parsed);
     } catch (error) {
-      setError('Failed to parse resume. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to read resume. Please try again.');
       console.error('Upload error:', error);
     } finally {
       setUploading(false);
@@ -80,21 +71,8 @@ export default function UploadPage() {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{
-          width: '48px',
-          height: '48px',
-          border: '4px solid #e5e7eb',
-          borderTop: '4px solid #2563eb',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
+      <div className="container page-section">
+        <p className="muted">Loading...</p>
       </div>
     );
   }
@@ -104,292 +82,85 @@ export default function UploadPage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)',
-      padding: '80px 16px 64px 16px'
-    }}>
-      <div style={{
-        maxWidth: '768px',
-        margin: '0 auto'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-            <div style={{
-              padding: '16px',
-              backgroundColor: '#dbeafe',
-              borderRadius: '50%'
-            }}>
-              <FiUpload style={{ width: '48px', height: '48px', color: '#2563eb' }} />
-            </div>
-          </div>
-          <h1 style={{
-            fontSize: '48px',
-            fontWeight: 'bold',
-            color: '#111827',
-            marginBottom: '16px'
-          }}>
-            Upload Your Resume
-          </h1>
-          <p style={{
-            fontSize: '20px',
-            color: '#4b5563',
-            maxWidth: '600px',
-            margin: '0 auto'
-          }}>
-            Upload your existing resume to enhance it with AI-powered suggestions and professional formatting.
-          </p>
-        </div>
-        
-        {!parsedData ? (
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #f3f4f6',
-            padding: '48px'
-          }}>
-            <div style={{
-              border: '2px dashed #d1d5db',
-              borderRadius: '12px',
-              padding: '48px',
-              textAlign: 'center'
-            }}>
-              {!file ? (
-                <>
-                  <FiUpload style={{ 
-                    width: '64px', 
-                    height: '64px', 
-                    color: '#9ca3af', 
-                    margin: '0 auto 24px auto',
-                    display: 'block'
-                  }} />
-                  <p style={{
-                    fontSize: '20px',
-                    color: '#4b5563',
-                    marginBottom: '16px'
-                  }}>
-                    Upload your existing resume to enhance it with AI
-                  </p>
-                  <p style={{
-                    fontSize: '16px',
-                    color: '#6b7280',
-                    marginBottom: '32px'
-                  }}>
-                    Supported format: PDF
-                  </p>
-                  <label style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '16px 32px',
-                    fontSize: '18px',
-                    fontWeight: '500',
-                    color: 'white',
-                    backgroundColor: '#2563eb',
-                    border: '1px solid transparent',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s'
-                  }}>
-                    Choose File
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      onChange={handleFileSelect}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                </>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '16px'
-                  }}>
-                    <FiFile style={{ width: '32px', height: '32px', color: '#2563eb' }} />
-                    <span style={{
-                      fontSize: '20px',
-                      fontWeight: '500',
-                      color: '#111827'
-                    }}>{file.name}</span>
-                    <button
-                      onClick={removeFile}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#ef4444',
-                        cursor: 'pointer',
-                        padding: '8px'
-                      }}
-                    >
-                      <FiX style={{ width: '24px', height: '24px' }} />
-                    </button>
-                  </div>
-                  <button
-                    onClick={handleUpload}
-                    disabled={uploading}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '16px 32px',
-                      fontSize: '18px',
-                      fontWeight: '500',
-                      color: 'white',
-                      backgroundColor: uploading ? '#9ca3af' : '#16a34a',
-                      border: '1px solid transparent',
-                      borderRadius: '8px',
-                      cursor: uploading ? 'not-allowed' : 'pointer',
-                      transition: 'background-color 0.2s'
-                    }}
-                  >
-                    {uploading ? 'Processing...' : 'Parse Resume'}
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            {error && (
-              <div style={{
-                marginTop: '24px',
-                padding: '16px',
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
-                borderRadius: '8px'
-              }}>
-                <p style={{ color: '#dc2626' }}>{error}</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #f3f4f6',
-            padding: '48px'
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '64px',
-                height: '64px',
-                backgroundColor: '#dcfce7',
-                borderRadius: '50%',
-                marginBottom: '16px'
-              }}>
-                <FiCheck style={{ width: '32px', height: '32px', color: '#16a34a' }} />
-              </div>
-              <h2 style={{
-                fontSize: '32px',
-                fontWeight: 'bold',
-                color: '#16a34a',
-                marginBottom: '16px'
-              }}>
-                Resume Parsed Successfully!
-              </h2>
-              <p style={{
-                fontSize: '18px',
-                color: '#4b5563',
-                maxWidth: '500px',
-                margin: '0 auto'
-              }}>
-                Your resume has been analyzed and the content has been extracted. 
-                You can now edit and enhance it using our AI-powered tools.
+    <div className="container page-section" style={{ maxWidth: '720px' }}>
+      <h1 style={{ marginBottom: '8px' }}>Import a resume</h1>
+      <p className="secondary" style={{ marginBottom: '24px' }}>
+        Choose a PDF, DOCX or TXT file. The text is read in your browser and the file is not uploaded.
+      </p>
+
+      {!parsedData ? (
+        <div className="card">
+          {!file ? (
+            <>
+              <p className="label" style={{ marginBottom: '8px' }}>Resume file</p>
+              <p className="muted" style={{ fontSize: '15px', marginBottom: '16px' }}>
+                Supported formats: PDF, DOCX, TXT. Scanned or image-only PDFs cannot be read.
               </p>
-            </div>
-            
-            <div style={{
-              backgroundColor: '#f9fafb',
-              borderRadius: '12px',
-              padding: '24px',
-              marginBottom: '32px'
-            }}>
-              <h3 style={{
-                fontSize: '20px',
-                fontWeight: '600',
-                color: '#111827',
-                marginBottom: '16px'
-              }}>
-                Extracted Information:
-              </h3>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '12px'
-              }}>
-                {['Contact information', 'Work experience', 'Education', 'Skills', 'Additional sections'].map((item, index) => (
-                  <div key={index} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <div style={{
-                      width: '8px',
-                      height: '8px',
-                      backgroundColor: '#2563eb',
-                      borderRadius: '50%'
-                    }}></div>
-                    <span style={{ color: '#4b5563' }}>{item}</span>
-                  </div>
-                ))}
+              <label className="btn" style={{ cursor: 'pointer' }}>
+                Choose File
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.txt"
+                  onChange={handleFileSelect}
+                  style={{ position: 'absolute', width: '1px', height: '1px', opacity: 0, overflow: 'hidden' }}
+                />
+              </label>
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                <FiFile aria-hidden="true" style={{ width: '20px', height: '20px', flexShrink: 0, color: 'var(--text-secondary)' }} />
+                <span style={{ fontWeight: 600, overflowWrap: 'anywhere', flexGrow: 1 }}>{file.name}</span>
+                <button onClick={removeFile} className="btn-icon" aria-label="Remove file">
+                  <FiX style={{ width: '20px', height: '20px' }} />
+                </button>
+              </div>
+              <div>
+                <button onClick={handleUpload} disabled={uploading} className="btn">
+                  {uploading ? 'Processing...' : 'Parse Resume'}
+                </button>
               </div>
             </div>
-            
-            <div style={{
-              display: 'flex',
-              gap: '16px',
-              justifyContent: 'center',
-              flexWrap: 'wrap'
-            }}>
-              <button
-                onClick={handleContinueEditing}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '16px 32px',
-                  fontSize: '18px',
-                  fontWeight: '500',
-                  color: 'white',
-                  backgroundColor: '#2563eb',
-                  border: '1px solid transparent',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
-                }}
-              >
-                Continue Editing
-                <FiArrowRight style={{ marginLeft: '8px', width: '20px', height: '20px' }} />
-              </button>
-              <button
-                onClick={removeFile}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '16px 32px',
-                  fontSize: '18px',
-                  fontWeight: '500',
-                  color: '#6b7280',
-                  backgroundColor: '#f3f4f6',
-                  border: '1px solid transparent',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
-                }}
-              >
-                Upload Different Resume
-              </button>
+          )}
+
+          {error && (
+            <div className="notice notice-error" role="alert" style={{ marginTop: '16px' }}>
+              <p style={{ color: '#dc2626' }}>{error}</p>
             </div>
+          )}
+        </div>
+      ) : (
+        <div className="card">
+          <h2 style={{ marginBottom: '8px', color: 'var(--success)' }}>Resume Parsed Successfully</h2>
+          <p className="secondary" style={{ marginBottom: '24px' }}>
+            The text was split into sections. Review each one in the editor, because automatic splitting can miss or misplace lines.
+          </p>
+
+          <div className="panel" style={{ marginBottom: '24px' }}>
+            <h3 style={{ marginBottom: '8px' }}>Sections looked for</h3>
+            <ul className="secondary" style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))',
+              gap: '4px 16px',
+              paddingLeft: '20px'
+            }}>
+              {['Contact information', 'Work experience', 'Education', 'Skills', 'Additional sections'].map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
-        )}
-      </div>
+
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <button onClick={handleContinueEditing} className="btn">
+              Continue Editing
+              <FiArrowRight aria-hidden="true" style={{ width: '18px', height: '18px' }} />
+            </button>
+            <button onClick={removeFile} className="btn-secondary">
+              Upload Different Resume
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

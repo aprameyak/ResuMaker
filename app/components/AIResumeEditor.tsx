@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { analyzeContent } from '../../lib/resume';
 import { motion } from 'framer-motion';
 import { FiEdit3 } from 'react-icons/fi';
 
@@ -19,6 +20,7 @@ const AIResumeEditor: React.FC<AIResumeEditorProps> = ({ section, content, onUpd
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [checked, setChecked] = useState<boolean>(false);
 
   const handleAnalyze = async () => {
     if (!content.trim()) {
@@ -30,20 +32,9 @@ const AIResumeEditor: React.FC<AIResumeEditorProps> = ({ section, content, onUpd
     setError(null);
 
     try {
-      const response = await fetch('/api/analyze-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ section, content }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to analyze content');
-      }
-
-      const data = await response.json();
-      setSuggestions(data.data);
+      const found = analyzeContent(section, content);
+      setSuggestions(found);
+      setChecked(true);
     } catch (error) {
       setError('Failed to analyze content');
       console.error('Analysis error:', error);
@@ -55,6 +46,7 @@ const AIResumeEditor: React.FC<AIResumeEditorProps> = ({ section, content, onUpd
   const applySuggestion = (suggestion: Suggestion) => {
     const newContent = content.replace(suggestion.original, suggestion.suggestion);
     onUpdate(newContent);
+    setSuggestions(prev => prev.filter(item => item !== suggestion));
   };
 
   return (
@@ -75,7 +67,7 @@ const AIResumeEditor: React.FC<AIResumeEditorProps> = ({ section, content, onUpd
           gap: '12px',
           marginBottom: '16px'
         }}>
-          <FiEdit3 style={{ width: '24px', height: '24px', color: '#2563eb' }} />
+          <FiEdit3 style={{ width: '24px', height: '24px', color: '#111111' }} />
           <h3 style={{
             fontSize: '18px',
             fontWeight: '600',
@@ -91,7 +83,7 @@ const AIResumeEditor: React.FC<AIResumeEditorProps> = ({ section, content, onUpd
           style={{
             marginBottom: '16px',
             padding: '12px 24px',
-            backgroundColor: isLoading ? '#9ca3af' : '#2563eb',
+            backgroundColor: isLoading ? '#9ca3af' : '#111111',
             color: 'white',
             borderRadius: '8px',
             border: 'none',
@@ -141,7 +133,7 @@ const AIResumeEditor: React.FC<AIResumeEditorProps> = ({ section, content, onUpd
                 }}>
                   <span style={{
                     padding: '4px 8px',
-                    backgroundColor: '#dbeafe',
+                    backgroundColor: '#f7f7f8',
                     color: '#1e40af',
                     borderRadius: '4px',
                     fontSize: '12px',
@@ -149,11 +141,11 @@ const AIResumeEditor: React.FC<AIResumeEditorProps> = ({ section, content, onUpd
                   }}>
                     {suggestion.type}
                   </span>
-                  <button
+                  {suggestion.suggestion !== suggestion.original && <button
                     onClick={() => applySuggestion(suggestion)}
                     style={{
                       padding: '4px 8px',
-                      backgroundColor: '#16a34a',
+                      backgroundColor: '#1a6b3a',
                       color: 'white',
                       borderRadius: '4px',
                       border: 'none',
@@ -163,16 +155,16 @@ const AIResumeEditor: React.FC<AIResumeEditorProps> = ({ section, content, onUpd
                     }}
                   >
                     Apply
-                  </button>
+                  </button>}
                 </div>
                 <div style={{ marginBottom: '8px' }}>
                   <strong style={{ color: '#dc2626' }}>Original:</strong>
                   <p style={{ color: '#4b5563', fontSize: '14px' }}>{suggestion.original}</p>
                 </div>
-                <div style={{ marginBottom: '8px' }}>
-                  <strong style={{ color: '#16a34a' }}>Suggestion:</strong>
+                {suggestion.suggestion !== suggestion.original && <div style={{ marginBottom: '8px' }}>
+                  <strong style={{ color: '#1a6b3a' }}>Suggestion:</strong>
                   <p style={{ color: '#4b5563', fontSize: '14px' }}>{suggestion.suggestion}</p>
-                </div>
+                </div>}
                 <div>
                   <strong style={{ color: '#111827' }}>Explanation:</strong>
                   <p style={{ color: '#6b7280', fontSize: '14px' }}>{suggestion.explanation}</p>
@@ -180,6 +172,9 @@ const AIResumeEditor: React.FC<AIResumeEditorProps> = ({ section, content, onUpd
               </div>
             ))}
           </div>
+        )}
+        {checked && !suggestions.length && !isLoading && (
+          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '12px' }}>No issues found in this section.</p>
         )}
       </div>
     </motion.div>

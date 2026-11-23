@@ -101,7 +101,7 @@ const ResumeImporter: React.FC<ResumeImporterProps> = ({ onImport }) => {
             fontSize: '14px',
             fontWeight: '500',
             color: 'white',
-            backgroundColor: isLoading || !file ? '#9ca3af' : '#2563eb',
+            backgroundColor: isLoading || !file ? '#9ca3af' : '#111111',
             cursor: isLoading || !file ? 'not-allowed' : 'pointer'
           }}
         >
